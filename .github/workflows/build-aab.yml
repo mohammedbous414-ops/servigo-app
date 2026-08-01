@@ -20,11 +20,11 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          npm ci || npm install
-          npm install @tailwindcss/oxide-linux-x64-gnu --save-optional || true
+          rm -f package-lock.json
+          npm install --os=linux --cpu=x64
 
       - name: Build Web App
-        run: npm run build
+        run: npx vite build
 
       - name: Setup Capacitor & Android
         run: |
@@ -51,4 +51,3 @@ jobs:
         with:
           name: app-release-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
-          
