@@ -49,5 +49,6 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: app-release-aab
-          path: android/app/build/outputs/bundle/release/app-release-aab
+        path: android/app/build/outputs/bundle/release/app-release.aab
+        
           
