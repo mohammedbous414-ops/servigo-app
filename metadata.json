@@ -1,0 +1,6 @@
+{
+  "name": "ServiGo - Ride & Transport Platform",
+  "description": "Professional InDrive-style ride bidding & transport app featuring live OpenStreetMap tracking, driver counter-offers, chat, multi-language (Arabic RTL, Darija, French, English), wallet, and admin panel.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
