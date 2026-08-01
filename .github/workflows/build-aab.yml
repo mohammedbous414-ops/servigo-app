@@ -29,6 +29,7 @@ jobs:
       - name: Setup Capacitor & Android
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init "ServiGo" "com.servigo.app" --web-dir "dist" || true
           npx cap add android || true
           npx cap sync android
 
