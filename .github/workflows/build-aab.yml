@@ -16,12 +16,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Install Dependencies
         run: |
-          rm -f package-lock.json
-          npm install --os=linux --cpu=x64
+          npm install
+          npm install @tailwindcss/oxide-linux-x64-gnu --force
 
       - name: Build Web App
         run: npx vite build
@@ -51,3 +51,4 @@ jobs:
         with:
           name: app-release-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
+          
