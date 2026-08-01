@@ -1,5 +1,4 @@
-
-         name: Build Android AAB
+name: Build Android AAB
 
 on:
   push:
@@ -50,4 +49,3 @@ jobs:
         with:
           name: app-release-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
- 
