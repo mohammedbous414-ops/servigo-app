@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Send, CheckCircle2, Clock, Phone, MessageSquare, Store, User, PlusCircle, X, Check, Settings, LogOut, Edit3, ShieldCheck, PhoneCall } from 'lucide-react';
+import { MapPin, Send, CheckCircle2, Clock, Phone, MessageSquare, Store, User, PlusCircle, X, Check, Settings, LogOut, Edit3, ShieldCheck } from 'lucide-react';
 
 interface StoreResponse {
   id: number;
@@ -22,12 +22,12 @@ interface RequestItem {
 }
 
 export default function App() {
-  // حالة تسجيل الدخول: false يعني لم يسجل بعد، true يعني مسجل
+  // حالة تسجيل الدخول
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [userName, setUserName] = useState('');
   const [userRole, setUserRole] = useState<'client' | 'merchant'>('client');
-  const [storeName, setStoreName] = useState(''); // خاص بالتاجر
+  const [storeName, setStoreName] = useState('');
 
   // التبويبات الداخلية
   const [activeTab, setActiveTab] = useState<'client' | 'merchant' | 'profile'>('client');
@@ -38,7 +38,7 @@ export default function App() {
   const [merchantPrice, setMerchantPrice] = useState('');
   const [merchantNotes, setMerchantNotes] = useState('');
 
-  // الطلبات
+  // إدارة الطلبات فـ localStorage
   const [requests, setRequests] = useState<RequestItem[]>(() => {
     const saved = localStorage.getItem('kayn_requests');
     if (saved) {
@@ -66,7 +66,7 @@ export default function App() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!phoneNumber.trim() || !userName.trim()) {
-      alert('المرجعي إدخال الاسم ورقم الهاتف بشكل صحيح!');
+      alert('المرجو إدخال الاسم ورقم الهاتف بشكل صحيح!');
       return;
     }
     if (userRole === 'merchant' && !storeName.trim()) {
@@ -74,13 +74,10 @@ export default function App() {
       return;
     }
     setIsLoggedIn(true);
-    if (userRole === 'merchant') {
-      setActiveTab('merchant');
-    } else {
-      setActiveTab('client');
-    }
+    setActiveTab(userRole === 'merchant' ? 'merchant' : 'client');
   };
 
+  // إرسال طلب جديد من الزبون
   const handleSendRequest = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
@@ -98,18 +95,19 @@ export default function App() {
     setQuery('');
   };
 
+  // رد التاجر على الطلب
   const handleMerchantRespond = (reqId: number) => {
     setRequests(requests.map(req => {
       if (req.id === reqId) {
         const newResponse: StoreResponse = {
           id: Date.now(),
           storeName: storeName || userName,
-          distance: "قريب منك (بوسكورة المركز)",
+          distance: "قريب منك (بوسكورة)",
           address: "بوسكورة، الدار البيضاء",
           phone: phoneNumber,
           whatsapp: "212" + phoneNumber.replace(/^0/, ''),
           price: merchantPrice ? `${merchantPrice} درهم` : 'حسب المعاينة',
-          notes: merchantNotes || 'متوفر حالياً في المحل.'
+          notes: merchantNotes || 'متوفر حالياً فـ المحل.'
         };
         return {
           ...req,
@@ -125,7 +123,7 @@ export default function App() {
     alert('تم إرسال ردك كتاجر معتمد بنجاح! ✅');
   };
 
-  // 1. شاشة تسجيل الدخول (إذا لم يسجل بعد)
+  // 1️⃣ شاشة تسجيل الدخول الأولى
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex items-center justify-center p-4" dir="rtl">
@@ -134,7 +132,7 @@ export default function App() {
             <div className="inline-block bg-amber-500 text-slate-950 font-black px-4 py-1.5 rounded-2xl text-2xl tracking-wider shadow-lg shadow-amber-500/20">
               كِايْنْ؟
             </div>
-            <p className="text-xs text-slate-400">منصة الشفافية والتوفر الفوري فـ بوسكورة 📍</p>
+            <p className="text-xs text-slate-400">الشفافية والتوفر الفوري فـ بوسكورة 📍</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-3.5">
@@ -171,10 +169,10 @@ export default function App() {
 
             {userRole === 'merchant' && (
               <div>
-                <label className="text-xs text-slate-400 block mb-1">اسم المحل التجاري (مهم جداً)</label>
+                <label className="text-xs text-slate-400 block mb-1">اسم المحل التجاري (ضروري)</label>
                 <input
                   type="text"
-                  placeholder="مثال: صيدلية الأمل / بياسات السيارات بوسكورة"
+                  placeholder="مثال: صيدلية الأمل / محل قطع الغيار"
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 focus:outline-none focus:border-amber-500"
@@ -183,7 +181,7 @@ export default function App() {
             )}
 
             <div>
-              <label className="text-xs text-slate-400 block mb-1">رقم الهاتف (للتواصل)</label>
+              <label className="text-xs text-slate-400 block mb-1">رقم الهاتف (للتواصل والواتساب)</label>
               <input
                 type="tel"
                 placeholder="06XXXXXXXX"
@@ -195,7 +193,7 @@ export default function App() {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 text-slate-950 font-bold py-3 rounded-xl text-xs shadow-lg shadow-amber-500/20 transition-all mt-2"
+              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold py-3 rounded-xl text-xs shadow-lg shadow-amber-500/20 transition-all mt-2"
             >
               دخول إلى التطبيق 🚀
             </button>
@@ -205,13 +203,15 @@ export default function App() {
     );
   }
 
-  // 2. واجهة التطبيق الرئيسية بعد تسجيل الدخول
+  // 2️⃣ الواجهة الرئيسية للتطبيق
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-24" dir="rtl">
+      
+      {/* Header */}
       <header className="bg-slate-900 border-b border-slate-800 p-4 sticky top-0 z-40 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="bg-amber-500 text-slate-950 font-black px-3 py-1 rounded-xl text-xl">كِايْنْ؟</div>
-          <span className="text-xs text-slate-400">{userRole === 'merchant' ? 'وضع التاجر المعتمد' : 'وضع الزبون'}</span>
+          <span className="text-xs text-slate-400">{userRole === 'merchant' ? 'تاجر معتمد 🏪' : 'زبون 👤'}</span>
         </div>
         <div className="flex items-center gap-1 text-xs text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
           <MapPin className="w-3.5 h-3.5" />
@@ -219,21 +219,24 @@ export default function App() {
         </div>
       </header>
 
+      {/* Main Content */}
       <main className="max-w-md mx-auto p-4 space-y-6">
         
-        {/* وضع الزبون */}
+        {/* --- وضع الزبون --- */}
         {activeTab === 'client' && (
           <div className="space-y-6">
             <section className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
-              <h2 className="text-base font-bold mb-1">شنو كتقلب عليه ودكّاتي؟ 🔍</h2>
-              <p className="text-xs text-slate-400 mb-3">سول التجار المعتمدين فـ بوسكورة فـ الحين.</p>
+              <h2 className="text-base font-bold mb-1">شنو كتقلب عليه؟ 🔍</h2>
+              <p className="text-xs text-slate-400 mb-3">كتب السلعة وسول التجار المعتمدين فـ بوسكورة دابا.</p>
+              
               <form onSubmit={handleSendRequest} className="space-y-3">
                 <textarea
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="مثال: دواء معين، بياسة موتور..."
+                  placeholder="مثال: دواء معين، بياسة موطور، حاجة للمنزل..."
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-100 focus:outline-none focus:border-amber-500 resize-none h-20"
                 />
+                
                 <div className="flex gap-2 overflow-x-auto pb-1 text-xs">
                   {['عام', 'صيدلية', 'قطع غيار', 'إلكترونيات'].map((cat) => (
                     <button
@@ -246,16 +249,17 @@ export default function App() {
                     </button>
                   ))}
                 </div>
+
                 <button type="submit" className="w-full bg-amber-500 text-slate-950 font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 text-xs">
                   <Send className="w-4 h-4" />
-                  <span>إرسال الطلب للتجار المعتمدين</span>
+                  <span>إرسال الطلب للمحلات القريبة</span>
                 </button>
               </form>
             </section>
 
             <section className="space-y-3">
               <h3 className="text-sm font-bold text-slate-300 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-amber-500" /> طلباتك والردود الفورية
+                <Clock className="w-4 h-4 text-amber-500" /> الطلبات والردود
               </h3>
               <div className="space-y-2">
                 {requests.map((req) => (
@@ -275,7 +279,7 @@ export default function App() {
           </div>
         )}
 
-        {/* وضع التاجر المعتمد */}
+        {/* --- وضع التاجر --- */}
         {activeTab === 'merchant' && (
           <div className="space-y-4">
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
@@ -289,7 +293,7 @@ export default function App() {
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-xs font-bold text-slate-400">طلبات الزبناء الجديدة:</h3>
+              <h3 className="text-xs font-bold text-slate-400">طلبات الزبناء القريبة:</h3>
               {requests.map((req) => (
                 <div key={req.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
                   <div className="flex justify-between items-start">
@@ -299,10 +303,11 @@ export default function App() {
                     </div>
                     <span className="text-[10px] text-slate-500">{req.time}</span>
                   </div>
+
                   <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-2">
                     <div className="flex gap-2">
-                      <input type="text" placeholder="الثمن (مثال: 45 درهم)" value={merchantPrice} onChange={(e) => setMerchantPrice(e.target.value)} className="w-1/2 bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-100 focus:outline-none" />
-                      <input type="text" placeholder="ملاحظات (متوفر حالياً)" value={merchantNotes} onChange={(e) => setMerchantNotes(e.target.value)} className="w-1/2 bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-100 focus:outline-none" />
+                      <input type="text" placeholder="الثمن (مثال: 50 درهم)" value={merchantPrice} onChange={(e) => setMerchantPrice(e.target.value)} className="w-1/2 bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-100 focus:outline-none" />
+                      <input type="text" placeholder="ملاحظات (متوفر دابا)" value={merchantNotes} onChange={(e) => setMerchantNotes(e.target.value)} className="w-1/2 bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-100 focus:outline-none" />
                     </div>
                     <button onClick={() => handleMerchantRespond(req.id)} className="w-full bg-emerald-600 text-white font-bold py-2 rounded-lg text-xs flex items-center justify-center gap-1">
                       <PlusCircle className="w-3.5 h-3.5" />
@@ -315,7 +320,7 @@ export default function App() {
           </div>
         )}
 
-        {/* البروفايل */}
+        {/* --- البروفايل --- */}
         {activeTab === 'profile' && (
           <div className="space-y-4">
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 text-center space-y-2">
@@ -327,14 +332,15 @@ export default function App() {
               {storeName && <p className="text-xs text-emerald-400 font-bold">🏪 {storeName}</p>}
             </div>
 
-            <button onClick={() => setIsLoggedIn(false)} className="w-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold py-3 rounded-xl">
-              تسجيل الخروج من الحساب 🚪
+            <button onClick={() => setIsLoggedIn(false)} className="w-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold py-3 rounded-xl flex items-center justify-center gap-2">
+              <LogOut className="w-4 h-4" />
+              <span>تسجيل الخروج من الحساب</span>
             </button>
           </div>
         )}
       </main>
 
-      {/* الشريط السفلي */}
+      {/* --- Navigation Bottom Bar --- */}
       <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 p-2 z-40 max-w-md mx-auto flex justify-around">
         <button onClick={() => setActiveTab('client')} className={`flex flex-col items-center gap-1 text-[10px] ${activeTab === 'client' ? 'text-amber-500 font-bold' : 'text-slate-400'}`}>
           <User className="w-5 h-5" />الزبون
@@ -347,7 +353,7 @@ export default function App() {
         </button>
       </nav>
 
-      {/* نافذة التفاصيل */}
+      {/* --- Modal Pop-up --- */}
       {selectedReq && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-t-3xl sm:rounded-2xl max-h-[80vh] flex flex-col">
@@ -355,6 +361,7 @@ export default function App() {
               <h3 className="text-sm font-bold">{selectedReq.item}</h3>
               <button onClick={() => setSelectedReq(null)} className="p-1 text-slate-400 bg-slate-800 rounded-full"><X className="w-5 h-5" /></button>
             </div>
+            
             <div className="p-4 overflow-y-auto space-y-3">
               {selectedReq.responses.length === 0 ? (
                 <p className="text-xs text-slate-400 text-center py-4">في انتظار ردود التجار المعتمدين...</p>
@@ -372,8 +379,12 @@ export default function App() {
                     </div>
                     {res.notes && <p className="text-xs text-slate-300">💬 {res.notes}</p>}
                     <div className="flex gap-2 pt-1">
-                      <a href={`https://wa.me/${res.whatsapp}`} target="_blank" rel="noreferrer" className="flex-1 bg-emerald-600 text-white font-bold text-xs py-1.5 rounded text-center">واتساب</a>
-                      <a href={`tel:${res.phone}`} className="flex-1 bg-slate-800 text-slate-200 font-bold text-xs py-1.5 rounded text-center border border-slate-700">اتصال</a>
+                      <a href={`https://wa.me/${res.whatsapp}`} target="_blank" rel="noreferrer" className="flex-1 bg-emerald-600 text-white font-bold text-xs py-1.5 rounded text-center flex items-center justify-center gap-1">
+                        <MessageSquare className="w-3.5 h-3.5" /> واتساب
+                      </a>
+                      <a href={`tel:${res.phone}`} className="flex-1 bg-slate-800 text-slate-200 font-bold text-xs py-1.5 rounded text-center border border-slate-700 flex items-center justify-center gap-1">
+                        <Phone className="w-3.5 h-3.5" /> اتصال
+                      </a>
                     </div>
                   </div>
                 ))
@@ -382,7 +393,8 @@ export default function App() {
           </div>
         </div>
       )}
+
     </div>
   );
-    }
-      
+                        }
+
