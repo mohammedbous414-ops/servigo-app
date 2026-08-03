@@ -29,12 +29,16 @@ jobs:
           npx cap init "Kayn App" "com.kayn.app" --web-dir dist
           npx cap add android
 
-      - name: Update Android App Name & Icon
+      - name: Update Android App Name, Icon & Fix Kotlin Conflict
         run: |
+          # 1. تحديث اسم التطبيق
           sed -i 's/Kayn App/كِايْنْ؟/g' android/app/src/main/res/values/strings.xml || true
           sed -i 's/ServiGo/كِايْنْ؟/g' android/app/src/main/res/values/strings.xml || true
           
-          # إنشاء أيقونة التطبيق بالأسود والأصفر
+          # 2. حل مشكلة Duplicate Class الخاطئة بخصوص Kotlin
+          echo "configurations.all { resolutionStrategy { exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'; exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8' } }" >> android/app/build.gradle
+          
+          # 3. إنشاء أيقونة التطبيق بالأسود والأصفر
           sudo apt-get update && sudo apt-get install -y imagemagick
           convert -size 512x512 xc:'#0f172a' -fill '#f59e0b' -draw "roundrectangle 30,30 482,482 80,80" -fill '#0f172a' -font DejaVu-Sans-Bold -pointsize 180 -gravity center -annotate +0+0 "؟" icon.png
           
