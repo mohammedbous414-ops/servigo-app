@@ -17,26 +17,27 @@ jobs:
           node-version: 20
 
       - name: Install Dependencies
-        run: npm install
+        run: |
+          npm install
+          npm install @capacitor/core @capacitor/cli @capacitor/android
 
       - name: Build Web Assets
         run: npm run build
 
-      - name: Setup Capacitor
+      - name: Setup Capacitor & Add Android
         run: |
-          npx cap init "كِايْنْ؟" "com.kayn.app" --web-dir dist
+          npx cap init "Kayn App" "com.kayn.app" --web-dir dist
           npx cap add android
 
       - name: Update Android App Name & Icon
         run: |
+          sed -i 's/Kayn App/كِايْنْ؟/g' android/app/src/main/res/values/strings.xml || true
           sed -i 's/ServiGo/كِايْنْ؟/g' android/app/src/main/res/values/strings.xml || true
-          sed -i 's/servigo-app/kayn-app/g' android/app/src/main/res/values/strings.xml || true
           
-          # إنشاء أيقونة موحدة باللون الأسود والأصفر اللامع (Kayn Brand)
+          # إنشاء أيقونة التطبيق بالأسود والأصفر
           sudo apt-get update && sudo apt-get install -y imagemagick
           convert -size 512x512 xc:'#0f172a' -fill '#f59e0b' -draw "roundrectangle 30,30 482,482 80,80" -fill '#0f172a' -font DejaVu-Sans-Bold -pointsize 180 -gravity center -annotate +0+0 "؟" icon.png
           
-          # توزيع الأيقونة على مجلدات الأندرويد
           mkdir -p android/app/src/main/res/mipmap-hdpi
           mkdir -p android/app/src/main/res/mipmap-mdpi
           mkdir -p android/app/src/main/res/mipmap-xhdpi
