@@ -14,23 +14,23 @@ interface RequestItem {
 }
 
 export default function App() {
-  const [city, setCity] = useState<string>('جاري تحديد موقعك...');
+  const [city, setCity] = useState<string>('بوسكورة');
   const [activeTab, setActiveTab] = useState<'client' | 'vendor' | 'profile'>('client');
   const [selectedCategory, setSelectedCategory] = useState<string>('عام');
 
-  // بيانات المستخدم (الاسم ورقم الهاتف)
+  // بيانات المستخدم
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>('');
   const [userPhone, setUserPhone] = useState<string>('');
 
-  // نص الطلب الجديد للزبون
+  // نص الطلب
   const [needText, setNeedText] = useState<string>('');
 
-  // قائمة الطلبات التفاعلية
+  // قائمة الطلبات
   const [requests, setRequests] = useState<RequestItem[]>([
     {
       id: 1,
-      clientName: 'أحمد',
+      clientName: 'Rayan el bouhali',
       clientPhone: '0612345678',
       need: 'دواء Synthroid 50mg',
       category: 'صيدلية',
@@ -43,14 +43,11 @@ export default function App() {
     }
   ]);
 
-  // مدخلات رد التاجر
   const [replyInput, setReplyInput] = useState<{ [key: number]: string }>({});
 
   useEffect(() => {
-    // 1. تحديد موقع الـ GPS تلقائياً
     getCurrentLocation();
 
-    // 2. التحقق من وجود حساب مسجل سابقاً في الهاتف
     const savedName = localStorage.getItem('thiqua_name');
     const savedPhone = localStorage.getItem('thiqua_phone');
     if (savedName && savedPhone) {
@@ -60,7 +57,6 @@ export default function App() {
     }
   }, []);
 
-  // دالة تحديد الموقع عبر Geolocation
   const getCurrentLocation = async () => {
     try {
       const coordinates = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 8000 });
@@ -69,15 +65,12 @@ export default function App() {
       const data = await response.json();
       if (data && data.address) {
         setCity(data.address.city || data.address.town || data.address.village || data.address.suburb || 'بوسكورة');
-      } else {
-        setCity('بوسكورة');
       }
     } catch (e) {
       setCity('بوسكورة');
     }
   };
 
-  // حفظ الاسم ورقم الهاتف أول مرة
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     if (!userName.trim() || !userPhone.trim()) {
@@ -89,12 +82,11 @@ export default function App() {
     setIsRegistered(true);
   };
 
-  // إرسال طلب جديد من الزبون
   const handleSendRequest = () => {
     if (!needText.trim()) return;
     const newReq: RequestItem = {
       id: Date.now(),
-      clientName: userName,
+      clientName: userName || 'زبون',
       clientPhone: userPhone,
       need: needText,
       category: selectedCategory,
@@ -105,10 +97,9 @@ export default function App() {
     };
     setRequests([newReq, ...requests]);
     setNeedText('');
-    alert('تم إرسال الطلب للمحلات والتجار القريبين منك فـ ' + city);
+    alert('تم إرسال الطلب للمحلات القريبة فـ ' + city);
   };
 
-  // إرسال رد "كاينا عندي" من التاجر
   const handleVendorReply = (reqId: number) => {
     const text = replyInput[reqId];
     if (!text || !text.trim()) return;
@@ -118,7 +109,7 @@ export default function App() {
         return {
           ...req,
           repliesCount: req.repliesCount + 1,
-          replies: [...req.replies, { vendorName: userName, vendorPhone: userPhone, message: text }]
+          replies: [...req.replies, { vendorName: userName || 'تاجر', vendorPhone: userPhone, message: text }]
         };
       }
       return req;
@@ -128,28 +119,28 @@ export default function App() {
     alert('تم إرسال ردك للزبون بنجاح!');
   };
 
-  // 1️⃣ شاشة الدخول الأولى (تسجيل الاسم ورقم الهاتف)
+  // شاشة التسجيل
   if (!isRegistered) {
     return (
-      <div style={{ backgroundColor: '#0b1329', color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', direction: 'rtl', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxSizing: 'border-box' }}>
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <div style={{ background: '#f59e0b', display: 'inline-block', padding: '8px 24px', borderRadius: '14px', color: '#000', fontWeight: 'bold', fontSize: '28px', marginBottom: '10px' }}>
-            ⚡ Thiqua
+      <div style={{ backgroundColor: '#091122', color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', direction: 'rtl', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxSizing: 'border-box' }}>
+        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+          <div style={{ background: '#f59e0b', display: 'inline-block', padding: '8px 20px', borderRadius: '12px', color: '#000', fontWeight: 'bold', fontSize: '22px' }}>
+            Thiqua ⚡
           </div>
-          <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>مرحباً بك فـ {city} 📍</p>
+          <p style={{ color: '#94a3b8', fontSize: '13px', marginTop: '8px' }}>مرحباً بك فـ {city} 📍</p>
         </div>
 
-        <div style={{ background: '#131d38', padding: '20px', borderRadius: '16px', border: '1px solid #1e2942' }}>
-          <h3 style={{ margin: '0 0 15px 0', fontSize: '18px', color: '#fff', textAlign: 'center' }}>تسجيل الحساب المباشر 👤</h3>
+        <div style={{ background: '#111c35', padding: '20px', borderRadius: '16px', border: '1px solid #1e2942' }}>
+          <h3 style={{ margin: '0 0 15px 0', fontSize: '16px', color: '#fff', textAlign: 'center' }}>تسجيل الحساب المباشر 👤</h3>
           <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
               <label style={{ fontSize: '12px', color: '#cbd5e1' }}>الاسم الشخصي أو اسم المحل:</label>
               <input
                 type="text"
-                placeholder="مثال: يوسف البوهالي"
+                placeholder="مثال: Rayan el bouhali"
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
-                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #1e293b', backgroundColor: '#0b132b', color: '#fff', fontSize: '14px', boxSizing: 'border-box', marginTop: '4px' }}
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #1e293b', backgroundColor: '#091122', color: '#fff', fontSize: '14px', boxSizing: 'border-box', marginTop: '4px' }}
                 required
               />
             </div>
@@ -160,13 +151,13 @@ export default function App() {
                 placeholder="06XXXXXXXX"
                 value={userPhone}
                 onChange={(e) => setUserPhone(e.target.value)}
-                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #1e293b', backgroundColor: '#0b132b', color: '#fff', fontSize: '14px', boxSizing: 'border-box', marginTop: '4px' }}
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #1e293b', backgroundColor: '#091122', color: '#fff', fontSize: '14px', boxSizing: 'border-box', marginTop: '4px' }}
                 required
               />
             </div>
             <button
               type="submit"
-              style={{ marginTop: '10px', width: '100%', padding: '14px', borderRadius: '10px', border: 'none', backgroundColor: '#f59e0b', color: '#000', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer' }}
+              style={{ marginTop: '10px', width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#f59e0b', color: '#000', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}
             >
               دخول التطبيق ➔
             </button>
@@ -176,63 +167,63 @@ export default function App() {
     );
   }
 
-  // 2️⃣ الواجهة الرئيسية للتطبيق
   return (
-    <div style={{ backgroundColor: '#0b1329', color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', direction: 'rtl', paddingBottom: '70px', boxSizing: 'border-box' }}>
+    <div style={{ backgroundColor: '#091122', color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', direction: 'rtl', paddingBottom: '75px', boxSizing: 'border-box' }}>
       
-      {/* 🏷️ الهيدر الفوقاني المطابق للصورة بـ ⚡ Thiqua */}
-      <header style={{ padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0b1329' }}>
+      {/* 🏷️ الهيدر الفوقاني (مظبوط تماماً بحال الصورة الثانية) */}
+      <header style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#091122' }}>
         
-        {/* اللوغو الأصلي مع البرق ⚡ */}
-        <div style={{ background: '#f59e0b', padding: '6px 16px', borderRadius: '12px', color: '#000', fontWeight: 'bold', fontSize: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span>⚡</span> Thiqua
+        {/* اللوغو بالحجم المناسب الدقيق */}
+        <div style={{ background: '#f59e0b', padding: '6px 14px', borderRadius: '10px', color: '#000', fontWeight: 'bold', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          Thiqua ⚡
         </div>
 
-        {/* معلومات المستخدم والمدينة من ה-GPS */}
+        {/* نوع الحساب والمدينة */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <div style={{ background: '#1e293b', border: '1px solid #334155', padding: '6px 10px', borderRadius: '20px', fontSize: '12px', color: '#94a3b8' }}>
-            👤 {userName}
+          <div style={{ background: '#131f37', border: '1px solid #1e2d4a', padding: '5px 12px', borderRadius: '20px', fontSize: '12px', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            👤 {userName || 'زبون'}
           </div>
-          <div style={{ background: '#064e3b', border: '1px solid #10b981', padding: '6px 10px', borderRadius: '20px', fontSize: '12px', color: '#34d399' }}>
+          <div style={{ background: '#053e2e', border: '1px solid #059669', padding: '5px 12px', borderRadius: '20px', fontSize: '12px', color: '#34d399', display: 'flex', alignItems: 'center', gap: '4px' }}>
             📍 {city}
           </div>
         </div>
       </header>
 
       {/* 📱 المحتوى الرئيسي */}
-      <main style={{ padding: '0 15px' }}>
+      <main style={{ padding: '0 16px' }}>
 
-        {/* 🛒 1. واجهة الزبون */}
+        {/* 🛒 واجهة الزبون */}
         {activeTab === 'client' && (
           <div>
-            {/* بطاقة نشر الطلب */}
-            <div style={{ background: '#131d38', borderRadius: '16px', padding: '20px', border: '1px solid #1e2942', marginBottom: '20px' }}>
-              <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', color: '#fff' }}>شنو كتقلب عليه؟ 🔍</h3>
-              <p style={{ margin: '0 0 15px 0', fontSize: '12px', color: '#94a3b8' }}>كتب السلعة وسول التجار المعتمدين فـ {city} دابا.</p>
+            <div style={{ background: '#111c35', borderRadius: '16px', padding: '16px', border: '1px solid #1d2b49', marginBottom: '20px' }}>
+              <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                شنو كتقلب عليه؟ 🔍
+              </h3>
+              <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#8295b5' }}>كتب السلعة وسول التجار المعتمدين فـ {city} دابا.</p>
 
               <textarea
                 rows={3}
                 placeholder="مثال: دواء معين، بياسة موطور، حاجة للمنزل..."
                 value={needText}
                 onChange={(e) => setNeedText(e.target.value)}
-                style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #1e293b', backgroundColor: '#0b132b', color: '#fff', fontSize: '14px', boxSizing: 'border-box', marginBottom: '15px', resize: 'none' }}
+                style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #1d2b49', backgroundColor: '#091122', color: '#fff', fontSize: '13px', boxSizing: 'border-box', marginBottom: '12px', resize: 'none' }}
               />
 
-              {/* أزرار التصنيفات التفاعلية */}
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', overflowX: 'auto' }}>
+              {/* أزرار التصنيفات */}
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', overflowX: 'auto' }}>
                 {['عام', 'صيدلية', 'قطع غيار', 'إلكترونيات'].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     style={{
                       flex: 1,
-                      padding: '8px 12px',
+                      padding: '8px 10px',
                       borderRadius: '8px',
                       border: 'none',
-                      backgroundColor: selectedCategory === cat ? '#f59e0b' : '#1e293b',
-                      color: selectedCategory === cat ? '#000' : '#94a3b8',
+                      backgroundColor: selectedCategory === cat ? '#f59e0b' : '#172440',
+                      color: selectedCategory === cat ? '#000' : '#8295b5',
                       fontWeight: selectedCategory === cat ? 'bold' : 'normal',
-                      fontSize: '13px',
+                      fontSize: '12px',
                       cursor: 'pointer',
                       whiteSpace: 'nowrap'
                     }}
@@ -242,19 +233,18 @@ export default function App() {
                 ))}
               </div>
 
-              {/* زر إرسال الطلب بالبرق ⚡ */}
+              {/* زر إرسال الطلب */}
               <button
                 onClick={handleSendRequest}
                 style={{
                   width: '100%',
-                  padding: '14px',
-                  borderRadius: '12px',
+                  padding: '12px',
+                  borderRadius: '10px',
                   border: 'none',
                   backgroundColor: '#f59e0b',
                   color: '#000',
                   fontWeight: 'bold',
-                  fontSize: '15px',
-                  boxShadow: '0 4px 15px rgba(245, 158, 11, 0.3)',
+                  fontSize: '14px',
                   cursor: 'pointer',
                   display: 'flex',
                   justifyContent: 'center',
@@ -266,30 +256,32 @@ export default function App() {
               </button>
             </div>
 
-            {/* قسم الطلبات والردود الحية */}
-            <h4 style={{ margin: '0 0 10px 0', fontSize: '15px', color: '#cbd5e1' }}>⏱️ الطلبات والردود</h4>
+            {/* قسم الطلبات والردود */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+              <span style={{ fontSize: '14px' }}>🕒</span>
+              <h4 style={{ margin: 0, fontSize: '14px', color: '#cbd5e1' }}>الطلبات والردود</h4>
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {requests.map((req) => (
-                <div key={req.id} style={{ background: '#131d38', padding: '15px', borderRadius: '12px', border: '1px solid #1e2942' }}>
+                <div key={req.id} style={{ background: '#111c35', padding: '14px', borderRadius: '12px', border: '1px solid #1d2b49' }}>
                   
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#fff' }}>{req.need}</span>
-                    <span style={{ background: '#1e293b', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', color: '#94a3b8' }}>{req.category}</span>
+                    <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#fff' }}>{req.need}</span>
+                    <span style={{ background: '#172440', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', color: '#8295b5' }}>{req.category}</span>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '11px', color: '#64748b' }}>👤 {req.clientName} • {req.time}</span>
-                    <div style={{ color: '#f59e0b', fontSize: '13px', fontWeight: 'bold' }}>
-                      ✔ كاين ({req.repliesCount} محلات)
+                    <div style={{ color: '#f59e0b', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span>✔</span> كاين ({req.repliesCount} محلات)
                     </div>
                   </div>
 
-                  {/* قائمة ردود التجار */}
                   {req.replies.length > 0 && (
-                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1e293b' }}>
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1d2b49' }}>
                       {req.replies.map((rep, idx) => (
-                        <div key={idx} style={{ background: '#0b132b', padding: '8px 12px', borderRadius: '8px', marginTop: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div key={idx} style={{ background: '#091122', padding: '8px 10px', borderRadius: '8px', marginTop: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
                             <span style={{ fontSize: '12px', color: '#f59e0b', fontWeight: 'bold' }}>🏪 {rep.vendorName}: </span>
                             <span style={{ fontSize: '12px', color: '#cbd5e1' }}>{rep.message}</span>
@@ -308,22 +300,22 @@ export default function App() {
           </div>
         )}
 
-        {/* 🏪 2. واجهة التاجر */}
+        {/* 🏪 واجهة التاجر */}
         {activeTab === 'vendor' && (
           <div>
-            <div style={{ background: '#131d38', borderRadius: '16px', padding: '15px', border: '1px solid #1e2942', marginBottom: '15px' }}>
-              <h3 style={{ margin: 0, color: '#f59e0b', fontSize: '16px' }}>لوحة التجار فـ {city} 🏪</h3>
-              <p style={{ margin: '4px 0 0 0', color: '#94a3b8', fontSize: '12px' }}>شاهد طلبات الزبناء وجاوبهم "كاينا عندي".</p>
+            <div style={{ background: '#111c35', borderRadius: '14px', padding: '14px', border: '1px solid #1d2b49', marginBottom: '12px' }}>
+              <h3 style={{ margin: 0, color: '#f59e0b', fontSize: '15px' }}>لوحة التجار فـ {city} 🏪</h3>
+              <p style={{ margin: '4px 0 0 0', color: '#8295b5', fontSize: '12px' }}>شاهد طلبات الزبناء وجاوبهم "كاينا عندي".</p>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {requests.map((req) => (
-                <div key={req.id} style={{ background: '#131d38', padding: '15px', borderRadius: '12px', border: '1px solid #1e2942' }}>
+                <div key={req.id} style={{ background: '#111c35', padding: '14px', borderRadius: '12px', border: '1px solid #1d2b49' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontWeight: 'bold', color: '#fff' }}>👤 {req.clientName} ({req.category})</span>
+                    <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '13px' }}>👤 {req.clientName} ({req.category})</span>
                     <a href={`tel:${req.clientPhone}`} style={{ color: '#22c55e', fontSize: '12px', textDecoration: 'none' }}>📞 {req.clientPhone}</a>
                   </div>
-                  <p style={{ margin: '0 0 10px 0', color: '#cbd5e1', fontSize: '14px', background: '#0b132b', padding: '10px', borderRadius: '8px' }}>
+                  <p style={{ margin: '0 0 10px 0', color: '#cbd5e1', fontSize: '13px', background: '#091122', padding: '8px 10px', borderRadius: '6px' }}>
                     "{req.need}"
                   </p>
 
@@ -333,13 +325,13 @@ export default function App() {
                       placeholder="جاوب الزبون: (مثال: كاينا عندي، الثمن...)"
                       value={replyInput[req.id] || ''}
                       onChange={(e) => setReplyInput({ ...replyInput, [req.id]: e.target.value })}
-                      style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #1e293b', backgroundColor: '#0b132b', color: '#fff', fontSize: '12px' }}
+                      style={{ flex: 1, padding: '8px 10px', borderRadius: '6px', border: '1px solid #1d2b49', backgroundColor: '#091122', color: '#fff', fontSize: '12px' }}
                     />
                     <button
                       onClick={() => handleVendorReply(req.id)}
-                      style={{ background: '#22c55e', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
+                      style={{ background: '#22c55e', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '6px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
                     >
-                      قول ليه: كاينا 👍
+                      جاوب 👍
                     </button>
                   </div>
                 </div>
@@ -348,63 +340,90 @@ export default function App() {
           </div>
         )}
 
-        {/* ⚙️ 3. واجهة البروفايل */}
+        {/* ⚙️ واجهة البروفايل */}
         {activeTab === 'profile' && (
-          <div style={{ background: '#131d38', padding: '20px', borderRadius: '16px', border: '1px solid #1e2942', textAlign: 'center' }}>
-            <div style={{ fontSize: '40px', marginBottom: '10px' }}>👤</div>
-            <h3 style={{ margin: 0, color: '#fff' }}>{userName}</h3>
-            <p style={{ color: '#22c55e', fontSize: '14px', margin: '5px 0' }}>📱 {userPhone}</p>
-            <p style={{ color: '#94a3b8', fontSize: '12px' }}>📍 المدينة الحالية: {city}</p>
+          <div style={{ background: '#111c35', padding: '20px', borderRadius: '16px', border: '1px solid #1d2b49', textAlign: 'center' }}>
+            <div style={{ fontSize: '36px', marginBottom: '8px' }}>👤</div>
+            <h3 style={{ margin: 0, color: '#fff', fontSize: '16px' }}>{userName}</h3>
+            <p style={{ color: '#22c55e', fontSize: '13px', margin: '4px 0' }}>📱 {userPhone}</p>
+            <p style={{ color: '#8295b5', fontSize: '12px' }}>📍 المدينة: {city}</p>
             <button
               onClick={() => { localStorage.clear(); setIsRegistered(false); }}
-              style={{ marginTop: '15px', background: '#ef4444', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}
+              style={{ marginTop: '12px', background: '#ef4444', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
             >
-              تغير الاسم أو الرقم
+              تغيير الحساب
             </button>
           </div>
         )}
 
       </main>
 
-      {/* 🧭 شريط التنقل السفلي الأصلي (Bottom Navigation Bar) */}
+      {/* 🧭 شريط التنقل السفلي الموزع بالعمود (عكس المشكلة السابقة 100%) */}
       <nav style={{
         position: 'fixed',
         bottom: 0,
         left: 0,
         right: 0,
-        height: '60px',
-        backgroundColor: '#0b1329',
-        borderTop: '1px solid #1e2942',
+        height: '65px',
+        backgroundColor: '#091122',
+        borderTop: '1px solid #1d2b49',
         display: 'flex',
         justify: 'space-around',
         alignItems: 'center',
         zIndex: 1000
       }}>
+        {/* زر الزبون */}
         <div
           onClick={() => setActiveTab('client')}
-          style={{ cursor: 'pointer', textAlign: 'center', color: activeTab === 'client' ? '#f59e0b' : '#64748b' }}
+          style={{
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justify: 'center',
+            color: activeTab === 'client' ? '#f59e0b' : '#64748b'
+          }}
         >
-          <div style={{ fontSize: '18px' }}>👤</div>
-          <div style={{ fontSize: '11px', fontWeight: activeTab === 'client' ? 'bold' : 'normal' }}>الزبون</div>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <span style={{ fontSize: '11px', marginTop: '3px', fontWeight: activeTab === 'client' ? 'bold' : 'normal' }}>الزبون</span>
         </div>
 
+        {/* زر التاجر */}
         <div
           onClick={() => setActiveTab('vendor')}
-          style={{ cursor: 'pointer', textAlign: 'center', color: activeTab === 'vendor' ? '#f59e0b' : '#64748b' }}
+          style={{
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justify: 'center',
+            color: activeTab === 'vendor' ? '#f59e0b' : '#64748b'
+          }}
         >
-          <div style={{ fontSize: '18px' }}>🏪</div>
-          <div style={{ fontSize: '11px', fontWeight: activeTab === 'vendor' ? 'bold' : 'normal' }}>التاجر</div>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          <span style={{ fontSize: '11px', marginTop: '3px', fontWeight: activeTab === 'vendor' ? 'bold' : 'normal' }}>التاجر</span>
         </div>
 
+        {/* زر البروفايل */}
         <div
           onClick={() => setActiveTab('profile')}
-          style={{ cursor: 'pointer', textAlign: 'center', color: activeTab === 'profile' ? '#f59e0b' : '#64748b' }}
+          style={{
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justify: 'center',
+            color: activeTab === 'profile' ? '#f59e0b' : '#64748b'
+          }}
         >
-          <div style={{ fontSize: '18px' }}>⚙️</div>
-          <div style={{ fontSize: '11px', fontWeight: activeTab === 'profile' ? 'bold' : 'normal' }}>البروفايل</div>
-        </div>
-      </nav>
-
-    </div>
-  );
-}
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span style={{ fontSize: '11px', marginTop: '3px', fontWeight: activ
