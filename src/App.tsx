@@ -18,19 +18,15 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'client' | 'vendor' | 'map' | 'profile'>('client');
   const [selectedCategory, setSelectedCategory] = useState<string>('عام');
 
-  // إحداثيات موقع الزبون/المستخدم
   const [userLat, setUserLat] = useState<number>(33.4489);
   const [userLng, setUserLng] = useState<number>(-7.6486);
 
-  // بيانات المستخدم
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>('');
   const [userPhone, setUserPhone] = useState<string>('');
 
-  // نص الطلب
   const [needText, setNeedText] = useState<string>('');
 
-  // قائمة الطلبات مع المحلات والردود ومواقعهم
   const [requests, setRequests] = useState<RequestItem[]>([
     {
       id: 1,
@@ -199,7 +195,6 @@ export default function App() {
   return (
     <div style={{ backgroundColor: '#091122', color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', direction: 'rtl', paddingBottom: '85px', boxSizing: 'border-box' }}>
       
-      {/* 🏷️ الهيدر الفوقاني */}
       <header style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#091122' }}>
         <div style={{ background: '#f59e0b', padding: '6px 14px', borderRadius: '10px', color: '#000', fontWeight: 'bold', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '4px' }}>
           Thiqua ⚡
@@ -215,10 +210,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* 📱 المحتوى الرئيسي */}
       <main style={{ padding: '0 16px' }}>
 
-        {/* 🛒 واجهة الزبون */}
         {activeTab === 'client' && (
           <div>
             <div style={{ background: '#111c35', borderRadius: '16px', padding: '16px', border: '1px solid #1d2b49', marginBottom: '20px' }}>
@@ -328,7 +321,6 @@ export default function App() {
           </div>
         )}
 
-        {/* 🏪 واجهة التاجر */}
         {activeTab === 'vendor' && (
           <div>
             <div style={{ background: '#111c35', borderRadius: '14px', padding: '14px', border: '1px solid #1d2b49', marginBottom: '12px' }}>
@@ -375,7 +367,6 @@ export default function App() {
           </div>
         )}
 
-        {/* 🗺️ واجهة الخريطة التفاعلية */}
         {activeTab === 'map' && (
           <div>
             <div style={{ background: '#111c35', borderRadius: '14px', padding: '14px', border: '1px solid #1d2b49', marginBottom: '12px' }}>
@@ -411,7 +402,6 @@ export default function App() {
           </div>
         )}
 
-        {/* ⚙️ واجهة البروفايل */}
         {activeTab === 'profile' && (
           <div style={{ background: '#111c35', padding: '20px', borderRadius: '16px', border: '1px solid #1d2b49', textAlign: 'center' }}>
             <div style={{ fontSize: '36px', marginBottom: '8px' }}>👤</div>
@@ -420,4 +410,95 @@ export default function App() {
             <p style={{ color: '#8295b5', fontSize: '12px' }}>📍 المدينة: {city}</p>
             <button
               onClick={() => { localStorage.clear(); setIsRegistered(false); }}
-              style={{ marginTop: '12px', background: '#ef4444', co
+              style={{ marginTop: '12px', background: '#ef4444', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
+            >
+              تغيير الحساب
+            </button>
+          </div>
+        )}
+
+      </main>
+
+      <nav style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        h      </main>
+
+      <nav style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: '70px',
+        backgroundColor: '#0d1527',
+        borderTop: '1px solid #1d2b49',
+        display: 'flex',
+        justify: 'space-around',
+        alignItems: 'center',
+        zIndex: 1000,
+        paddingBottom: '4px'
+      }}>
+        <button
+          onClick={() => setActiveTab('client')}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1,
+            color: activeTab === 'client' ? '#f59e0b' : '#64748b', outline: 'none'
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <span style={{ fontSize: '11px', marginTop: '3px', fontWeight: activeTab === 'client' ? 'bold' : 'normal' }}>الزبون</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('vendor')}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1,
+            color: activeTab === 'vendor' ? '#f59e0b' : '#64748b', outline: 'none'
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          <span style={{ fontSize: '11px', marginTop: '3px', fontWeight: activeTab === 'vendor' ? 'bold' : 'normal' }}>التاجر</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('map')}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1,
+            color: activeTab === 'map' ? '#f59e0b' : '#64748b', outline: 'none'
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+            <line x1="8" y1="2" x2="8" y2="18"></line>
+            <line x1="16" y1="6" x2="16" y2="22"></line>
+          </svg>
+          <span style={{ fontSize: '11px', marginTop: '3px', fontWeight: activeTab === 'map' ? 'bold' : 'normal' }}>الخريطة</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('profile')}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1,
+            color: activeTab === 'profile' ? '#f59e0b' : '#64748b', outline: 'none'
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span style={{ fontSize: '11px', marginTop: '3px', fontWeight: activeTab === 'profile' ? 'bold' : 'normal' }}>البروفايل</span>
+        </button>
+      </nav>
+
+    </div>
+  );
+      }
+                                      
