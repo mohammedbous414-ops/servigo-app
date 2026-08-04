@@ -34,6 +34,13 @@ export default function App() {
           message: 'مرحباً، الدواء متوفر بالمحل حالياً.',
           lat: 33.4510,
           lng: -7.6450
+        },
+        { 
+          vendorName: 'صيدلية الرحمة', 
+          vendorPhone: '0661998877', 
+          message: 'متوفر أيضاً بخصم 5%',
+          lat: 33.4460,
+          lng: -7.6510
         }
       ]
     }
@@ -86,18 +93,69 @@ export default function App() {
   const handleVendorReply = (reqId: number) => {
     const text = replyInput[reqId];
     if (!text || !text.trim()) return;
+    // إضافة موقع الجغرافي للتاجر قريب من موقع المستخدم
+    const randomLatOffset = (Math.random() - 0.5) * 0.01;
+    const randomLngOffset = (Math.random() - 0.5) * 0.01;
+
     setRequests(requests.map(req => {
       if (req.id === reqId) {
         return {
           ...req,
           repliesCount: req.repliesCount + 1,
-          replies: [...req.replies, { vendorName: userName || 'تاجر', vendorPhone: userPhone, message: text, lat: userLat + 0.002, lng: userLng + 0.002 }]
+          replies: [
+            ...req.replies, 
+            { 
+              vendorName: userName || 'تاجر', 
+              vendorPhone: userPhone, 
+              message: text, 
+              lat: userLat + randomLatOffset, 
+              lng: userLng + randomLngOffset 
+            }
+          ]
         };
       }
       return req;
     }));
     setReplyInput({ ...replyInput, [reqId]: '' });
   };
+
+  // تجميع كل ردود التجار لمشاهدة مواقهم فـ الخريطة
+  const allVendorReplies = requests.flatMap(r => r.replies);
+
+  // إعداد خريطة Leaflet بالـ HTML المباشر
+  const mapHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+      <style>
+        body { margin: 0; padding: 0; }
+        #map { width: 100%; height: 100vh; }
+        .client-pin { background: #3b82f6; border: 2px solid white; border-radius: 50%; width: 15px; height: 15px; }
+      </style>
+    </head>
+    <body>
+      <div id="map"></div>
+      <script>
+        var map = L.map('map').setView([${userLat}, ${userLng}], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19
+        }).addTo(map);
+
+        // موقع الزبون
+        L.marker([${userLat}, ${userLng}]).addTo(map)
+          .bindPopup("<b>📍 موقعك الحالي (الزبون)</b>").openPopup();
+
+        // مواقف التجار
+        ${allVendorReplies.map(v => `
+          L.marker([${v.lat || userLat + 0.003}, ${v.lng || userLng + 0.003}]).addTo(map)
+            .bindPopup("<b>🏪 ${v.vendorName}</b><br>${v.message}<br><a href='https://wa.me/${formatPhone(v.vendorPhone)}'>تواصل واتساب</a>");
+        `).join('\n')}
+      </script>
+    </body>
+    </html>
+  `;
 
   if (!isRegistered) {
     return (
@@ -171,22 +229,21 @@ export default function App() {
 
       {activeTab === 'map' && (
         <div>
-          <h3>الخريطة والمحلات 🗺️</h3>
-          <p style={{ fontSize: '12px', color: '#8295b5' }}>موقعك والمحلات المتوفرة فـ {city}:</p>
+          <h3>الخريطة التفاعلية 🗺️</h3>
+          <p style={{ fontSize: '12px', color: '#8295b5' }}>📍 موقعك ومواقع التجار المتوفرين:</p>
           
-          {/* خريطة تظهر موقع المستخدم والمحلات */}
-          <div style={{ width: '100%', height: '280px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #1d2b49', marginBottom: '15px' }}>
+          <div style={{ width: '100%', height: '320px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #1d2b49', marginBottom: '15px' }}>
             <iframe
-              title="Map"
+              title="Interactive Map"
               width="100%"
               height="100%"
               frameBorder="0"
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${userLng - 0.02}%2C${userLat - 0.02}%2C${userLng + 0.02}%2C${userLat + 0.02}&layer=mapnik&marker=${userLat}%2C${userLng}`}
+              srcDoc={mapHtml}
             />
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {requests.flatMap(r => r.replies).map((rep, i) => (
+            {allVendorReplies.map((rep, i) => (
               <div key={i} style={{ background: '#111c35', padding: '10px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <b style={{ color: '#f59e0b', fontSize: '13px' }}>🏪 {rep.vendorName}</b>
@@ -217,5 +274,5 @@ export default function App() {
       </nav>
     </div>
   );
-                       }
-        
+                                    }
+                                   
