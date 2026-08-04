@@ -29,26 +29,32 @@ jobs:
           npx cap init "Kayn App" "com.kayn.app" --web-dir dist
           npx cap add android
 
-      - name: Update App Name, Permissions & Force Yellow Icon
+      - name: Update App Name, Permissions & Handshake Icon
         run: |
           # 1. تحديث اسم التطبيق
           sed -i 's/Kayn App/كِايْنْ؟/g' android/app/src/main/res/values/strings.xml || true
           sed -i 's/ServiGo/كِايْنْ؟/g' android/app/src/main/res/values/strings.xml || true
           
-          # 2. إضافة إذن الـ GPS في أندرويد
+          # 2. إضافة إذن الـ GPS
           sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" \/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" \/>' android/app/src/main/AndroidManifest.xml
           
-          # 3. حل مشكلة Duplicate Class بخصوص Kotlin
+          # 3. حل مشكلة Duplicate Class
           echo "configurations.all { resolutionStrategy { exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'; exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8' } }" >> android/app/build.gradle
           
-          # 4. مسح كل الأيقونات القديمة والافتراضية لتجنب ظهور اللوجو الأزرق
+          # 4. مسح الأيقونات القديمة
           rm -rf android/app/src/main/res/mipmap*
           
-          # 5. إنشاء الأيقونة الصفراء والأسود الجديدة
-          sudo apt-get update && sudo apt-get install -y imagemagick
-          convert -size 512x512 xc:'#0f172a' -fill '#f59e0b' -draw "roundrectangle 30,30 482,482 80,80" -fill '#0f172a' -font DejaVu-Sans-Bold -pointsize 180 -gravity center -annotate +0+0 "؟" icon.png
+          # 5. إنشاء الأيقونة الجديدة (رمز المصافحة بين التاجر والزبون 🤝)
+          sudo apt-get update && sudo apt-get install -y imagemagick fonts-noto-color-emoji
           
-          # إنشاء المجلدات بجميع الأحجام
+          # تصميم لوغو احترافي بخلفية كحلية وإطار أصفر مع رسم رمز المصافحة والشخاص
+          convert -size 512x512 xc:'#0f172a' \
+            -fill '#1e293b' -stroke '#f59e0b' -strokewidth 12 -draw "roundrectangle 20,20 492,492 60,60" \
+            -fill '#f59e0b' -stroke none -font DejaVu-Sans-Bold -pointsize 200 -gravity center -annotate +0-20 "🤝" \
+            -fill '#ffffff' -font DejaVu-Sans-Bold -pointsize 70 -gravity south -annotate +0+50 "كِايْنْ؟" \
+            icon.png
+          
+          # توزيع الأيقونة على كافة المجلدات
           for res in mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi; do
             mkdir -p android/app/src/main/res/$res
             cp icon.png android/app/src/main/res/$res/ic_launcher.png
