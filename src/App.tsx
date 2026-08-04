@@ -18,15 +18,15 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'client' | 'vendor' | 'profile'>('client');
   const [selectedCategory, setSelectedCategory] = useState<string>('عام');
 
-  // بيانات المستخدم
+  // بيانات المستخدم (الاسم ورقم الهاتف)
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>('');
   const [userPhone, setUserPhone] = useState<string>('');
 
-  // مدخلات الزبون
+  // نص الطلب الجديد للزبون
   const [needText, setNeedText] = useState<string>('');
 
-  // قائمة الطلبات
+  // قائمة الطلبات التفاعلية
   const [requests, setRequests] = useState<RequestItem[]>([
     {
       id: 1,
@@ -47,8 +47,10 @@ export default function App() {
   const [replyInput, setReplyInput] = useState<{ [key: number]: string }>({});
 
   useEffect(() => {
+    // 1. تحديد موقع الـ GPS تلقائياً
     getCurrentLocation();
 
+    // 2. التحقق من وجود حساب مسجل سابقاً في الهاتف
     const savedName = localStorage.getItem('thiqua_name');
     const savedPhone = localStorage.getItem('thiqua_phone');
     if (savedName && savedPhone) {
@@ -58,6 +60,7 @@ export default function App() {
     }
   }, []);
 
+  // دالة تحديد الموقع عبر Geolocation
   const getCurrentLocation = async () => {
     try {
       const coordinates = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 8000 });
@@ -74,6 +77,7 @@ export default function App() {
     }
   };
 
+  // حفظ الاسم ورقم الهاتف أول مرة
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     if (!userName.trim() || !userPhone.trim()) {
@@ -85,6 +89,7 @@ export default function App() {
     setIsRegistered(true);
   };
 
+  // إرسال طلب جديد من الزبون
   const handleSendRequest = () => {
     if (!needText.trim()) return;
     const newReq: RequestItem = {
@@ -103,6 +108,7 @@ export default function App() {
     alert('تم إرسال الطلب للمحلات والتجار القريبين منك فـ ' + city);
   };
 
+  // إرسال رد "كاينا عندي" من التاجر
   const handleVendorReply = (reqId: number) => {
     const text = replyInput[reqId];
     if (!text || !text.trim()) return;
@@ -122,12 +128,11 @@ export default function App() {
     alert('تم إرسال ردك للزبون بنجاح!');
   };
 
-  // شاشة التسجيل الأولى
+  // 1️⃣ شاشة الدخول الأولى (تسجيل الاسم ورقم الهاتف)
   if (!isRegistered) {
     return (
       <div style={{ backgroundColor: '#0b1329', color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', direction: 'rtl', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxSizing: 'border-box' }}>
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          {/* اللوغو مع البرق ⚡ */}
           <div style={{ background: '#f59e0b', display: 'inline-block', padding: '8px 24px', borderRadius: '14px', color: '#000', fontWeight: 'bold', fontSize: '28px', marginBottom: '10px' }}>
             ⚡ Thiqua
           </div>
@@ -171,18 +176,19 @@ export default function App() {
     );
   }
 
+  // 2️⃣ الواجهة الرئيسية للتطبيق
   return (
     <div style={{ backgroundColor: '#0b1329', color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', direction: 'rtl', paddingBottom: '70px', boxSizing: 'border-box' }}>
       
-      {/* 🏷️ الهيدر الفوقاني الأصلي باسم ⚡ Thiqua */}
+      {/* 🏷️ الهيدر الفوقاني المطابق للصورة بـ ⚡ Thiqua */}
       <header style={{ padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0b1329' }}>
         
-        {/* اللوغو بالبرق ⚡ */}
+        {/* اللوغو الأصلي مع البرق ⚡ */}
         <div style={{ background: '#f59e0b', padding: '6px 16px', borderRadius: '12px', color: '#000', fontWeight: 'bold', fontSize: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
           <span>⚡</span> Thiqua
         </div>
 
-        {/* نوع الحساب والمدينة */}
+        {/* معلومات المستخدم والمدينة من ה-GPS */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <div style={{ background: '#1e293b', border: '1px solid #334155', padding: '6px 10px', borderRadius: '20px', fontSize: '12px', color: '#94a3b8' }}>
             👤 {userName}
@@ -196,9 +202,10 @@ export default function App() {
       {/* 📱 المحتوى الرئيسي */}
       <main style={{ padding: '0 15px' }}>
 
-        {/* 🛒 واجهة الزبون */}
+        {/* 🛒 1. واجهة الزبون */}
         {activeTab === 'client' && (
           <div>
+            {/* بطاقة نشر الطلب */}
             <div style={{ background: '#131d38', borderRadius: '16px', padding: '20px', border: '1px solid #1e2942', marginBottom: '20px' }}>
               <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', color: '#fff' }}>شنو كتقلب عليه؟ 🔍</h3>
               <p style={{ margin: '0 0 15px 0', fontSize: '12px', color: '#94a3b8' }}>كتب السلعة وسول التجار المعتمدين فـ {city} دابا.</p>
@@ -211,7 +218,7 @@ export default function App() {
                 style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #1e293b', backgroundColor: '#0b132b', color: '#fff', fontSize: '14px', boxSizing: 'border-box', marginBottom: '15px', resize: 'none' }}
               />
 
-              {/* التصنيفات */}
+              {/* أزرار التصنيفات التفاعلية */}
               <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', overflowX: 'auto' }}>
                 {['عام', 'صيدلية', 'قطع غيار', 'إلكترونيات'].map((cat) => (
                   <button
@@ -259,7 +266,7 @@ export default function App() {
               </button>
             </div>
 
-            {/* قسم الطلبات والردود */}
+            {/* قسم الطلبات والردود الحية */}
             <h4 style={{ margin: '0 0 10px 0', fontSize: '15px', color: '#cbd5e1' }}>⏱️ الطلبات والردود</h4>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -278,7 +285,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* الردود */}
+                  {/* قائمة ردود التجار */}
                   {req.replies.length > 0 && (
                     <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1e293b' }}>
                       {req.replies.map((rep, idx) => (
@@ -301,7 +308,7 @@ export default function App() {
           </div>
         )}
 
-        {/* 🏪 واجهة التاجر */}
+        {/* 🏪 2. واجهة التاجر */}
         {activeTab === 'vendor' && (
           <div>
             <div style={{ background: '#131d38', borderRadius: '16px', padding: '15px', border: '1px solid #1e2942', marginBottom: '15px' }}>
@@ -341,7 +348,7 @@ export default function App() {
           </div>
         )}
 
-        {/* ⚙️ واجهة البروفايل */}
+        {/* ⚙️ 3. واجهة البروفايل */}
         {activeTab === 'profile' && (
           <div style={{ background: '#131d38', padding: '20px', borderRadius: '16px', border: '1px solid #1e2942', textAlign: 'center' }}>
             <div style={{ fontSize: '40px', marginBottom: '10px' }}>👤</div>
@@ -359,7 +366,7 @@ export default function App() {
 
       </main>
 
-      {/* 🧭 شريط التنقل السفلي */}
+      {/* 🧭 شريط التنقل السفلي الأصلي (Bottom Navigation Bar) */}
       <nav style={{
         position: 'fixed',
         bottom: 0,
@@ -400,5 +407,4 @@ export default function App() {
 
     </div>
   );
-            }
-          
+}
