@@ -26,35 +26,34 @@ jobs:
 
       - name: Setup Capacitor & Add Android
         run: |
-          npx cap init "Kayn App" "com.kayn.app" --web-dir dist
+          npx cap init "Thiqa App" "com.thiqa.app" --web-dir dist
           npx cap add android
 
-      - name: Update App Name, Permissions & Handshake Icon
+      - name: Update App Name, Permissions & Final Vibrant Logo
         run: |
-          # 1. تحديث اسم التطبيق
-          sed -i 's/Kayn App/كِايْنْ؟/g' android/app/src/main/res/values/strings.xml || true
-          sed -i 's/ServiGo/كِايْنْ؟/g' android/app/src/main/res/values/strings.xml || true
+          # 1. تحديث اسم التطبيق ليكون اسم فيه تحدي وقوة "ثِقَة"
+          sed -i 's/Kayn App/ثِقَة/g' android/app/src/main/res/values/strings.xml || true
+          sed -i 's/ServiGo/ثِقَة/g' android/app/src/main/res/values/strings.xml || true
           
-          # 2. إضافة إذن الـ GPS
+          # 2. إضافة صلاحيات الموقع الـ GPS
           sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" \/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" \/>' android/app/src/main/AndroidManifest.xml
           
-          # 3. حل مشكلة Duplicate Class
+          # 3. حل مشاكل التوافقية
           echo "configurations.all { resolutionStrategy { exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'; exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8' } }" >> android/app/build.gradle
           
           # 4. مسح الأيقونات القديمة
           rm -rf android/app/src/main/res/mipmap*
           
-          # 5. إنشاء الأيقونة الجديدة (رمز المصافحة بين التاجر والزبون 🤝)
-          sudo apt-get update && sudo apt-get install -y imagemagick fonts-noto-color-emoji
-          
-          # تصميم لوغو احترافي بخلفية كحلية وإطار أصفر مع رسم رمز المصافحة والشخاص
+          # 5. توليد الأيقونة الجديدة الحية والمليئة بالأخوة والحيوية
+          sudo apt-get update && sudo apt-get install -y imagemagick
           convert -size 512x512 xc:'#0f172a' \
-            -fill '#1e293b' -stroke '#f59e0b' -strokewidth 12 -draw "roundrectangle 20,20 492,492 60,60" \
-            -fill '#f59e0b' -stroke none -font DejaVu-Sans-Bold -pointsize 200 -gravity center -annotate +0-20 "🤝" \
-            -fill '#ffffff' -font DejaVu-Sans-Bold -pointsize 70 -gravity south -annotate +0+50 "كِايْنْ؟" \
+            -fill '#f59e0b' -draw "circle 256,256 256,40" \
+            -fill '#3b82f6' -draw "circle 256,256 256,100" \
+            -fill '#ffffff' -draw "circle 256,256 256,160" \
+            -fill '#0f172a' -font DejaVu-Sans-Bold -pointsize 180 -gravity center -annotate +0-10 "⚡" \
             icon.png
           
-          # توزيع الأيقونة على كافة المجلدات
+          # توزيع الأيقونة على كافة مقاسات الأندرويد
           for res in mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi; do
             mkdir -p android/app/src/main/res/$res
             cp icon.png android/app/src/main/res/$res/ic_launcher.png
