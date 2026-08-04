@@ -53,7 +53,6 @@ export default function App() {
 
   useEffect(() => {
     getCurrentLocation();
-
     const savedName = localStorage.getItem('thiqua_name');
     const savedPhone = localStorage.getItem('thiqua_phone');
     if (savedName && savedPhone) {
@@ -201,10 +200,10 @@ export default function App() {
         </div>
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <div style={{ background: '#131f37', border: '1px solid #1e2d4a', padding: '5px 12px', borderRadius: '20px', fontSize: '12px', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ background: '#131f37', border: '1px solid #1e2d4a', padding: '5px 12px', borderRadius: '20px', fontSize: '12px', color: '#cbd5e1' }}>
             👤 {userName || 'زبون'}
           </div>
-          <div style={{ background: '#053e2e', border: '1px solid #059669', padding: '5px 12px', borderRadius: '20px', fontSize: '12px', color: '#34d399', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ background: '#053e2e', border: '1px solid #059669', padding: '5px 12px', borderRadius: '20px', fontSize: '12px', color: '#34d399' }}>
             📍 {city}
           </div>
         </div>
@@ -215,9 +214,7 @@ export default function App() {
         {activeTab === 'client' && (
           <div>
             <div style={{ background: '#111c35', borderRadius: '16px', padding: '16px', border: '1px solid #1d2b49', marginBottom: '20px' }}>
-              <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                شنو كتقلب عليه؟ 🔍
-              </h3>
+              <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#fff' }}>شنو كتقلب عليه؟ 🔍</h3>
               <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#8295b5' }}>كتب السلعة وسول التجار المعتمدين فـ {city} دابا.</p>
 
               <textarea
@@ -234,16 +231,10 @@ export default function App() {
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     style={{
-                      flex: 1,
-                      padding: '8px 10px',
-                      borderRadius: '8px',
-                      border: 'none',
+                      flex: 1, padding: '8px 10px', borderRadius: '8px', border: 'none',
                       backgroundColor: selectedCategory === cat ? '#f59e0b' : '#172440',
                       color: selectedCategory === cat ? '#000' : '#8295b5',
-                      fontWeight: selectedCategory === cat ? 'bold' : 'normal',
-                      fontSize: '12px',
-                      cursor: 'pointer',
-                      whiteSpace: 'nowrap'
+                      fontWeight: selectedCategory === cat ? 'bold' : 'normal', fontSize: '12px', cursor: 'pointer'
                     }}
                   >
                     {cat}
@@ -253,23 +244,9 @@ export default function App() {
 
               <button
                 onClick={handleSendRequest}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  borderRadius: '10px',
-                  border: 'none',
-                  backgroundColor: '#f59e0b',
-                  color: '#000',
-                  fontWeight: 'bold',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
+                style={{ width: '100%', padding: '12px', borderRadius: '10px', border: 'none', backgroundColor: '#f59e0b', color: '#000', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}
               >
-                <span>⚡</span> إرسال الطلب للمحلات القريبة
+                ⚡ إرسال الطلب للمحلات القريبة
               </button>
             </div>
 
@@ -281,7 +258,6 @@ export default function App() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {requests.map((req) => (
                 <div key={req.id} style={{ background: '#111c35', padding: '14px', borderRadius: '12px', border: '1px solid #1d2b49' }}>
-                  
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#fff' }}>{req.need}</span>
                     <span style={{ background: '#172440', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', color: '#8295b5' }}>{req.category}</span>
@@ -289,8 +265,8 @@ export default function App() {
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '11px', color: '#64748b' }}>👤 {req.clientName} • {req.time}</span>
-                    <div style={{ color: '#f59e0b', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span>✔</span> كاين ({req.repliesCount} محلات)
+                    <div style={{ color: '#f59e0b', fontSize: '12px', fontWeight: 'bold' }}>
+                      ✔ كاين ({req.repliesCount} محلات)
                     </div>
                   </div>
 
@@ -306,7 +282,7 @@ export default function App() {
                             href={`https://wa.me/${formatWhatsAppPhone(rep.vendorPhone)}?text=${encodeURIComponent(`السلام عليكم، شفت الرد ديالك على تطبيق Thiqua بخصوص: ${req.need}`)}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ background: '#25D366', color: '#fff', textDecoration: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            style={{ background: '#25D366', color: '#fff', textDecoration: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}
                           >
                             💬 واتساب
                           </a>
@@ -314,7 +290,6 @@ export default function App() {
                       ))}
                     </div>
                   )}
-
                 </div>
               ))}
             </div>
@@ -337,7 +312,7 @@ export default function App() {
                       href={`https://wa.me/${formatWhatsAppPhone(req.clientPhone)}?text=${encodeURIComponent(`السلام عليكم، أنا تاجر فـ Thiqua بخصوص طلبك: ${req.need}`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ color: '#25D366', fontSize: '12px', textDecoration: 'none', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      style={{ color: '#25D366', fontSize: '12px', textDecoration: 'none', fontWeight: 'bold' }}
                     >
                       💬 واتساب
                     </a>
@@ -391,7 +366,7 @@ export default function App() {
                       href={`https://wa.me/${formatWhatsAppPhone(rep.vendorPhone)}?text=${encodeURIComponent(`السلام عليكم، شفت المحل ديالك فـ خريطة Thiqua بخصوص: ${req.need}`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{ background: '#25D366', color: '#fff', textDecoration: 'none', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      style={{ background: '#25D366', color: '#fff', textDecoration: 'none', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}
                     >
                       💬 التواصل
                     </a>
@@ -424,4 +399,24 @@ export default function App() {
         bottom: 0,
         left: 0,
         right: 0,
-        height: '7
+        height: '70px',
+        backgroundColor: '#0d1527',
+        borderTop: '1px solid #1d2b49',
+        display: 'flex',
+        justify: 'space-around',
+        alignItems: 'center',
+        zIndex: 1000,
+        paddingBottom: '4px'
+      }}>
+        <button
+          onClick={() => setActiveTab('client')}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: activeTab === 'client' ? '#f59e0b' : '#64748b' }}
+        >
+          <span style={{ fontSize: '20px' }}>👤</span>
+          <span style={{ fontSize: '11px', marginTop: '2px' }}>الزبون</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('vendor')}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', color: activeTab === 'vendor' ? '#f59e0b' : '#64748b' }}
+     
