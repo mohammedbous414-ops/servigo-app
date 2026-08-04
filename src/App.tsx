@@ -170,15 +170,12 @@ export default function App() {
   return (
     <div style={{ backgroundColor: '#091122', color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', direction: 'rtl', paddingBottom: '75px', boxSizing: 'border-box' }}>
       
-      {/* 🏷️ الهيدر الفوقاني (مظبوط تماماً بحال الصورة الثانية) */}
+      {/* 🏷️ الهيدر الفوقاني */}
       <header style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#091122' }}>
-        
-        {/* اللوغو بالحجم المناسب الدقيق */}
         <div style={{ background: '#f59e0b', padding: '6px 14px', borderRadius: '10px', color: '#000', fontWeight: 'bold', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '4px' }}>
           Thiqua ⚡
         </div>
 
-        {/* نوع الحساب والمدينة */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <div style={{ background: '#131f37', border: '1px solid #1e2d4a', padding: '5px 12px', borderRadius: '20px', fontSize: '12px', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '4px' }}>
             👤 {userName || 'زبون'}
@@ -358,7 +355,7 @@ export default function App() {
 
       </main>
 
-      {/* 🧭 شريط التنقل السفلي الموزع بالعمود (عكس المشكلة السابقة 100%) */}
+      {/* 🧭 شريط التنقل السفلي */}
       <nav style={{
         position: 'fixed',
         bottom: 0,
@@ -372,7 +369,6 @@ export default function App() {
         alignItems: 'center',
         zIndex: 1000
       }}>
-        {/* زر الزبون */}
         <div
           onClick={() => setActiveTab('client')}
           style={{
@@ -391,7 +387,6 @@ export default function App() {
           <span style={{ fontSize: '11px', marginTop: '3px', fontWeight: activeTab === 'client' ? 'bold' : 'normal' }}>الزبون</span>
         </div>
 
-        {/* زر التاجر */}
         <div
           onClick={() => setActiveTab('vendor')}
           style={{
@@ -410,7 +405,6 @@ export default function App() {
           <span style={{ fontSize: '11px', marginTop: '3px', fontWeight: activeTab === 'vendor' ? 'bold' : 'normal' }}>التاجر</span>
         </div>
 
-        {/* زر البروفايل */}
         <div
           onClick={() => setActiveTab('profile')}
           style={{
@@ -426,4 +420,11 @@ export default function App() {
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
-          <span style={{ fontSize: '11px', marginTop: '3px', fontWeight: activ
+          <span style={{ fontSize: '11px', marginTop: '3px', fontWeight: activeTab === 'profile' ? 'bold' : 'normal' }}>البروفايل</span>
+        </div>
+      </nav>
+
+    </div>
+  );
+        }
+    
