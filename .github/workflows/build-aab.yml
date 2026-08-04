@@ -26,6 +26,12 @@ jobs:
       - name: Build Web Assets
         run: npm run build
 
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
       - name: Setup Capacitor & Add Android
         run: |
           npx cap init "سارق الظلال" "com.shadowthief.game" --web-dir dist
@@ -52,12 +58,6 @@ jobs:
             cp icon.png android/app/src/main/res/$res/ic_launcher_round.png
             cp icon.png android/app/src/main/res/$res/ic_launcher_foreground.png
           done
-
-      - name: Setup Java JDK
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '17'
 
       - name: Build Android APK
         run: |
