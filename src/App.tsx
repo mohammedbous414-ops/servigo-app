@@ -71,6 +71,15 @@ export default function App() {
     }
   };
 
+  // تحويل رقم الهاتف المغربي لتنسيق الواتساب الدولي (212...)
+  const formatWhatsAppPhone = (phone: string) => {
+    let cleaned = phone.replace(/\D/g, '');
+    if (cleaned.startsWith('0')) {
+      cleaned = '212' + cleaned.substring(1);
+    }
+    return cleaned;
+  };
+
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     if (!userName.trim() || !userPhone.trim()) {
@@ -145,7 +154,7 @@ export default function App() {
               />
             </div>
             <div>
-              <label style={{ fontSize: '12px', color: '#cbd5e1' }}>رقم الهاتف للتواصل المباشر:</label>
+              <label style={{ fontSize: '12px', color: '#cbd5e1' }}>رقم الواتساب للتواصل المباشر:</label>
               <input
                 type="tel"
                 placeholder="06XXXXXXXX"
@@ -278,13 +287,18 @@ export default function App() {
                   {req.replies.length > 0 && (
                     <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #1d2b49' }}>
                       {req.replies.map((rep, idx) => (
-                        <div key={idx} style={{ background: '#091122', padding: '8px 10px', borderRadius: '8px', marginTop: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div key={idx} style={{ background: '#091122', padding: '10px', borderRadius: '8px', marginTop: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div>
                             <span style={{ fontSize: '12px', color: '#f59e0b', fontWeight: 'bold' }}>🏪 {rep.vendorName}: </span>
                             <span style={{ fontSize: '12px', color: '#cbd5e1' }}>{rep.message}</span>
                           </div>
-                          <a href={`tel:${rep.vendorPhone}`} style={{ background: '#22c55e', color: '#fff', textDecoration: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
-                            📞 اتصل
+                          <a
+                            href={`https://wa.me/${formatWhatsAppPhone(rep.vendorPhone)}?text=${encodeURIComponent(`السلام عليكم، شفت الرد ديالك على تضيقة في تطبيق Thiqua بخصوص: ${req.need}`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ background: '#25D366', color: '#fff', textDecoration: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            💬 واتساب
                           </a>
                         </div>
                       ))}
@@ -308,9 +322,16 @@ export default function App() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {requests.map((req) => (
                 <div key={req.id} style={{ background: '#111c35', padding: '14px', borderRadius: '12px', border: '1px solid #1d2b49' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'center' }}>
                     <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '13px' }}>👤 {req.clientName} ({req.category})</span>
-                    <a href={`tel:${req.clientPhone}`} style={{ color: '#22c55e', fontSize: '12px', textDecoration: 'none' }}>📞 {req.clientPhone}</a>
+                    <a
+                      href={`https://wa.me/${formatWhatsAppPhone(req.clientPhone)}?text=${encodeURIComponent(`السلام عليكم، أنا تاجر فـ Thiqua بخصوص طلبك: ${req.need}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: '#25D366', fontSize: '12px', textDecoration: 'none', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      💬 واتساب
+                    </a>
                   </div>
                   <p style={{ margin: '0 0 10px 0', color: '#cbd5e1', fontSize: '13px', background: '#091122', padding: '8px 10px', borderRadius: '6px' }}>
                     "{req.need}"
@@ -342,7 +363,7 @@ export default function App() {
           <div style={{ background: '#111c35', padding: '20px', borderRadius: '16px', border: '1px solid #1d2b49', textAlign: 'center' }}>
             <div style={{ fontSize: '36px', marginBottom: '8px' }}>👤</div>
             <h3 style={{ margin: 0, color: '#fff', fontSize: '16px' }}>{userName}</h3>
-            <p style={{ color: '#22c55e', fontSize: '13px', margin: '4px 0' }}>📱 {userPhone}</p>
+            <p style={{ color: '#25D366', fontSize: '13px', margin: '4px 0', fontWeight: 'bold' }}>💬 {userPhone}</p>
             <p style={{ color: '#8295b5', fontSize: '12px' }}>📍 المدينة: {city}</p>
             <button
               onClick={() => { localStorage.clear(); setIsRegistered(false); }}
@@ -424,22 +445,4 @@ export default function App() {
             border: 'none',
             cursor: 'pointer',
             display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justify: 'center',
-            flex: 1,
-            color: activeTab === 'profile' ? '#f59e0b' : '#64748b',
-            outline: 'none'
-          }}
-        >
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-          </svg>
-          <span style={{ fontSize: '12px', marginTop: '4px', fontWeight: activeTab === 'profile' ? 'bold' : 'normal' }}>البروفايل</span>
-        </button>
-      </nav>
-
-    </div>
-  );
-}
+            flexDirection: 'c
