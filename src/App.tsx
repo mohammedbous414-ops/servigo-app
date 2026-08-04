@@ -10,13 +10,17 @@ interface RequestItem {
   city: string;
   time: string;
   repliesCount: number;
-  replies: { vendorName: string; vendorPhone: string; message: string }[];
+  replies: { vendorName: string; vendorPhone: string; message: string; lat?: number; lng?: number }[];
 }
 
 export default function App() {
   const [city, setCity] = useState<string>('بوسكورة');
-  const [activeTab, setActiveTab] = useState<'client' | 'vendor' | 'profile'>('client');
+  const [activeTab, setActiveTab] = useState<'client' | 'vendor' | 'map' | 'profile'>('client');
   const [selectedCategory, setSelectedCategory] = useState<string>('عام');
+
+  // إحداثيات موقع الزبون/المستخدم
+  const [userLat, setUserLat] = useState<number>(33.4489);
+  const [userLng, setUserLng] = useState<number>(-7.6486);
 
   // بيانات المستخدم
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
@@ -26,7 +30,7 @@ export default function App() {
   // نص الطلب
   const [needText, setNeedText] = useState<string>('');
 
-  // قائمة الطلبات
+  // قائمة الطلبات مع المحلات والردود ومواقعهم
   const [requests, setRequests] = useState<RequestItem[]>([
     {
       id: 1,
@@ -38,7 +42,13 @@ export default function App() {
       time: 'منذ 5 دقائق',
       repliesCount: 1,
       replies: [
-        { vendorName: 'صيدلية الشفاء', vendorPhone: '0661223344', message: 'مرحباً، الدواء متوفر بالمحل حالياً.' }
+        { 
+          vendorName: 'صيدلية الشفاء', 
+          vendorPhone: '0661223344', 
+          message: 'مرحباً، الدواء متوفر بالمحل حالياً.',
+          lat: 33.4510,
+          lng: -7.6450
+        }
       ]
     }
   ]);
@@ -61,6 +71,9 @@ export default function App() {
     try {
       const coordinates = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 8000 });
       const { latitude, longitude } = coordinates.coords;
+      setUserLat(latitude);
+      setUserLng(longitude);
+
       const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=ar`);
       const data = await response.json();
       if (data && data.address) {
@@ -71,7 +84,6 @@ export default function App() {
     }
   };
 
-  // تحويل رقم الهاتف المغربي لتنسيق الواتساب الدولي (212...)
   const formatWhatsAppPhone = (phone: string) => {
     let cleaned = phone.replace(/\D/g, '');
     if (cleaned.startsWith('0')) {
@@ -118,17 +130,25 @@ export default function App() {
         return {
           ...req,
           repliesCount: req.repliesCount + 1,
-          replies: [...req.replies, { vendorName: userName || 'تاجر', vendorPhone: userPhone, message: text }]
+          replies: [
+            ...req.replies, 
+            { 
+              vendorName: userName || 'تاجر', 
+              vendorPhone: userPhone, 
+              message: text,
+              lat: userLat + (Math.random() - 0.5) * 0.01,
+              lng: userLng + (Math.random() - 0.5) * 0.01
+            }
+          ]
         };
       }
       return req;
     }));
 
     setReplyInput({ ...replyInput, [reqId]: '' });
-    alert('تم إرسال ردك للزبون بنجاح!');
+    alert('تم إرسال ردك للزبون بنجاح وتسجيل موقعك على الخريطة!');
   };
 
-  // شاشة التسجيل
   if (!isRegistered) {
     return (
       <div style={{ backgroundColor: '#091122', color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', direction: 'rtl', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxSizing: 'border-box' }}>
@@ -215,7 +235,6 @@ export default function App() {
                 style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #1d2b49', backgroundColor: '#091122', color: '#fff', fontSize: '13px', boxSizing: 'border-box', marginBottom: '12px', resize: 'none' }}
               />
 
-              {/* أزرار التصنيفات */}
               <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', overflowX: 'auto' }}>
                 {['عام', 'صيدلية', 'قطع غيار', 'إلكترونيات'].map((cat) => (
                   <button
@@ -239,7 +258,6 @@ export default function App() {
                 ))}
               </div>
 
-              {/* زر إرسال الطلب */}
               <button
                 onClick={handleSendRequest}
                 style={{
@@ -262,7 +280,6 @@ export default function App() {
               </button>
             </div>
 
-            {/* قسم الطلبات والردود */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
               <span style={{ fontSize: '14px' }}>🕒</span>
               <h4 style={{ margin: 0, fontSize: '14px', color: '#cbd5e1' }}>الطلبات والردود</h4>
@@ -358,6 +375,42 @@ export default function App() {
           </div>
         )}
 
+        {/* 🗺️ واجهة الخريطة التفاعلية */}
+        {activeTab === 'map' && (
+          <div>
+            <div style={{ background: '#111c35', borderRadius: '14px', padding: '14px', border: '1px solid #1d2b49', marginBottom: '12px' }}>
+              <h3 style={{ margin: 0, color: '#f59e0b', fontSize: '15px' }}>خريطة المحلات المتوفرة 🗺️</h3>
+              <p style={{ margin: '4px 0 0 0', color: '#8295b5', fontSize: '12px' }}>قائمة المحلات فـ {city} اللي أكدوا توفر المنتجات المطلوبة.</p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {requests.map(req => 
+                req.replies.map((rep, idx) => (
+                  <div key={idx} style={{ background: '#111c35', padding: '14px', borderRadius: '12px', border: '1px solid #1d2b49', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                        <span style={{ background: '#f59e0b', color: '#000', borderRadius: '50%', padding: '2px 8px', fontSize: '12px', fontWeight: 'bold' }}>🏪</span>
+                        <h4 style={{ margin: 0, fontSize: '14px', color: '#fff' }}>{rep.vendorName}</h4>
+                      </div>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#cbd5e1' }}>السلعة: <span style={{ color: '#f59e0b' }}>{req.need}</span></p>
+                      <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#8295b5' }}>💬 {rep.message}</p>
+                    </div>
+
+                    <a
+                      href={`https://wa.me/${formatWhatsAppPhone(rep.vendorPhone)}?text=${encodeURIComponent(`السلام عليكم، شفت المحل ديالك فـ خريطة Thiqua بخصوص: ${req.need}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ background: '#25D366', color: '#fff', textDecoration: 'none', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      💬 التواصل
+                    </a>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ⚙️ واجهة البروفايل */}
         {activeTab === 'profile' && (
           <div style={{ background: '#111c35', padding: '20px', borderRadius: '16px', border: '1px solid #1d2b49', textAlign: 'center' }}>
@@ -367,82 +420,4 @@ export default function App() {
             <p style={{ color: '#8295b5', fontSize: '12px' }}>📍 المدينة: {city}</p>
             <button
               onClick={() => { localStorage.clear(); setIsRegistered(false); }}
-              style={{ marginTop: '12px', background: '#ef4444', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
-            >
-              تغيير الحساب
-            </button>
-          </div>
-        )}
-
-      </main>
-
-      {/* 🧭 شريط التنقل السفلي المكبر والمنظم */}
-      <nav style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: '70px',
-        backgroundColor: '#0d1527',
-        borderTop: '1px solid #1d2b49',
-        display: 'flex',
-        justify: 'space-around',
-        alignItems: 'center',
-        zIndex: 1000,
-        paddingBottom: '4px'
-      }}>
-        {/* زر الزبون */}
-        <button
-          onClick={() => setActiveTab('client')}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justify: 'center',
-            flex: 1,
-            color: activeTab === 'client' ? '#f59e0b' : '#64748b',
-            outline: 'none'
-          }}
-        >
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-          <span style={{ fontSize: '12px', marginTop: '4px', fontWeight: activeTab === 'client' ? 'bold' : 'normal' }}>الزبون</span>
-        </button>
-
-        {/* زر التاجر */}
-        <button
-          onClick={() => setActiveTab('vendor')}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justify: 'center',
-            flex: 1,
-            color: activeTab === 'vendor' ? '#f59e0b' : '#64748b',
-            outline: 'none'
-          }}
-        >
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-          </svg>
-          <span style={{ fontSize: '12px', marginTop: '4px', fontWeight: activeTab === 'vendor' ? 'bold' : 'normal' }}>التاجر</span>
-        </button>
-
-        {/* زر البروفايل */}
-        <button
-          onClick={() => setActiveTab('profile')}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'c
+              style={{ marginTop: '12px', background: '#ef4444', co
