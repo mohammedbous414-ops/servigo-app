@@ -168,7 +168,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ backgroundColor: '#091122', color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', direction: 'rtl', paddingBottom: '75px', boxSizing: 'border-box' }}>
+    <div style={{ backgroundColor: '#091122', color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', direction: 'rtl', paddingBottom: '85px', boxSizing: 'border-box' }}>
       
       {/* 🏷️ الهيدر الفوقاني */}
       <header style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#091122' }}>
@@ -355,76 +355,91 @@ export default function App() {
 
       </main>
 
-      {/* 🧭 شريط التنقل السفلي */}
+      {/* 🧭 شريط التنقل السفلي المكبر والمنظم */}
       <nav style={{
         position: 'fixed',
         bottom: 0,
         left: 0,
         right: 0,
-        height: '65px',
-        backgroundColor: '#091122',
+        height: '70px',
+        backgroundColor: '#0d1527',
         borderTop: '1px solid #1d2b49',
         display: 'flex',
         justify: 'space-around',
         alignItems: 'center',
-        zIndex: 1000
+        zIndex: 1000,
+        paddingBottom: '4px'
       }}>
-        <div
+        {/* زر الزبون */}
+        <button
           onClick={() => setActiveTab('client')}
           style={{
+            background: 'none',
+            border: 'none',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justify: 'center',
-            color: activeTab === 'client' ? '#f59e0b' : '#64748b'
+            flex: 1,
+            color: activeTab === 'client' ? '#f59e0b' : '#64748b',
+            outline: 'none'
           }}
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
             <circle cx="12" cy="7" r="4"></circle>
           </svg>
-          <span style={{ fontSize: '11px', marginTop: '3px', fontWeight: activeTab === 'client' ? 'bold' : 'normal' }}>الزبون</span>
-        </div>
+          <span style={{ fontSize: '12px', marginTop: '4px', fontWeight: activeTab === 'client' ? 'bold' : 'normal' }}>الزبون</span>
+        </button>
 
-        <div
+        {/* زر التاجر */}
+        <button
           onClick={() => setActiveTab('vendor')}
           style={{
+            background: 'none',
+            border: 'none',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justify: 'center',
-            color: activeTab === 'vendor' ? '#f59e0b' : '#64748b'
+            flex: 1,
+            color: activeTab === 'vendor' ? '#f59e0b' : '#64748b',
+            outline: 'none'
           }}
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
             <polyline points="9 22 9 12 15 12 15 22"></polyline>
           </svg>
-          <span style={{ fontSize: '11px', marginTop: '3px', fontWeight: activeTab === 'vendor' ? 'bold' : 'normal' }}>التاجر</span>
-        </div>
+          <span style={{ fontSize: '12px', marginTop: '4px', fontWeight: activeTab === 'vendor' ? 'bold' : 'normal' }}>التاجر</span>
+        </button>
 
-        <div
+        {/* زر البروفايل */}
+        <button
           onClick={() => setActiveTab('profile')}
           style={{
+            background: 'none',
+            border: 'none',
             cursor: 'pointer',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justify: 'center',
-            color: activeTab === 'profile' ? '#f59e0b' : '#64748b'
+            flex: 1,
+            color: activeTab === 'profile' ? '#f59e0b' : '#64748b',
+            outline: 'none'
           }}
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
-          <span style={{ fontSize: '11px', marginTop: '3px', fontWeight: activeTab === 'profile' ? 'bold' : 'normal' }}>البروفايل</span>
-        </div>
+          <span style={{ fontSize: '12px', marginTop: '4px', fontWeight: activeTab === 'profile' ? 'bold' : 'normal' }}>البروفايل</span>
+        </button>
       </nav>
 
     </div>
   );
-        }
-    
+}
