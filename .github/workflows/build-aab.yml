@@ -8,8 +8,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -19,41 +21,31 @@ jobs:
       - name: Install Dependencies
         run: |
           npm install
-          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/geolocation
+          npm install @capacitor/core @capacitor/cli @capacitor/android
 
       - name: Build Web Assets
         run: npm run build
 
       - name: Setup Capacitor & Add Android
         run: |
-          npx cap init "Thiqa App" "com.thiqa.app" --web-dir dist
+          npx cap init "سارق الظلال" "com.shadowthief.game" --web-dir dist
           npx cap add android
 
-      - name: Update App Name, Permissions & Final Vibrant Logo
+      - name: Update App Name & Icon
         run: |
-          # 1. تحديث اسم التطبيق ليكون اسم فيه تحدي وقوة "ثِقَة"
-          sed -i 's/Kayn App/ثِقَة/g' android/app/src/main/res/values/strings.xml || true
-          sed -i 's/ServiGo/ثِقَة/g' android/app/src/main/res/values/strings.xml || true
-          
-          # 2. إضافة صلاحيات الموقع الـ GPS
-          sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" \/>\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" \/>' android/app/src/main/AndroidManifest.xml
-          
-          # 3. حل مشاكل التوافقية
-          echo "configurations.all { resolutionStrategy { exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'; exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8' } }" >> android/app/build.gradle
-          
-          # 4. مسح الأيقونات القديمة
-          rm -rf android/app/src/main/res/mipmap*
-          
-          # 5. توليد الأيقونة الجديدة الحية والمليئة بالأخوة والحيوية
+          # تحديث اسم التطبيق
+          sed -i 's/android:label=".*"/android:label="سارق الظلال"/' android/app/src/main/AndroidManifest.xml || true
+          sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">سارق الظلال<\/string>/' android/app/src/main/res/values/strings.xml || true
+          sed -i 's/<string name="title_activity_main">.*<\/string>/<string name="title_activity_main">سارق الظلال<\/string>/' android/app/src/main/res/values/strings.xml || true
+
+          # إنشاء لوغو قناع السارق 🥷 تلقائياً
           sudo apt-get update && sudo apt-get install -y imagemagick
-          convert -size 512x512 xc:'#0f172a' \
-            -fill '#f59e0b' -draw "circle 256,256 256,40" \
-            -fill '#3b82f6' -draw "circle 256,256 256,100" \
-            -fill '#ffffff' -draw "circle 256,256 256,160" \
-            -fill '#0f172a' -font DejaVu-Sans-Bold -pointsize 180 -gravity center -annotate +0-10 "⚡" \
+          convert -size 512x512 xc:'#0d1117' \
+            -fill '#1f6feb' -draw "circle 256,256 256,50" \
+            -fill '#ffffff' -font DejaVu-Sans-Bold -pointsize 200 -gravity center -annotate +0-10 "🥷" \
             icon.png
-          
-          # توزيع الأيقونة على كافة مقاسات الأندرويد
+
+          # توزيع اللوغو الجديد على أندرويد
           for res in mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi; do
             mkdir -p android/app/src/main/res/$res
             cp icon.png android/app/src/main/res/$res/ic_launcher.png
@@ -65,7 +57,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '21'
+          java-version: '17'
 
       - name: Build Android APK
         run: |
