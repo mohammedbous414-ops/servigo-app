@@ -1,194 +1,256 @@
-import React, { useState, useEffect } from 'react';
-import { Shield, Gem, RefreshCw, Play, Eye, User, Zap, AlertTriangle } from 'lucide-react';
-
-type Screen = 'welcome' | 'levels' | 'game';
+import React, { useState, useEffect, useRef } from 'react';
+import { Shield, Play, User, RefreshCw, Eye, Lock } from 'lucide-react';
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
+  const [screen, setScreen] = useState<'welcome' | 'game'>('welcome');
   const [playerName, setPlayerName] = useState('');
-  
   const [score, setScore] = useState(0);
-  const [highScore, setHighScore] = useState(0);
-
-  const gridSize = 5; // خريطة 5x5 (25 غرفة/مربع)
-  const [playerPos, setPlayerPos] = useState(0); // مكان اللاعب
-  const [targetPos, setTargetPos] = useState(24); // مكان الكنز
-
-  // أماكن 4 بوليسيين والاتجاه ديال الليزر ديالهم
-  const [guards, setGuards] = useState<number[]>([4, 8, 16, 20]);
-  const [laserZones, setLaserZones] = useState<number[]>([]); // أضواء الليزر
-  const [hidingSpots, setHidingSpots] = useState<number[]>([2, 7, 12, 17, 22]); // أماكن الأثاث والمخابئ
-
-  const [isHiding, setIsHiding] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [gameWon, setGameWon] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(35);
 
-  // تشغيل الأصوات
-  const playSound = (type: 'gem' | 'alarm' | 'hide' | 'move') => {
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+  // Canvas Game Engine References
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-      if (type === 'gem') {
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.15);
-      } else if (type === 'alarm') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(150, ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(700, ctx.currentTime + 0.4);
-        gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.4);
-      } else if (type === 'hide') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(300, ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(150, ctx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.2);
-      }
-    } catch (e) {}
-  };
-
-  // بداية اللعبة وتوزيع الأضواء والمخابئ
-  const startGame = () => {
-    setPlayerPos(0);
-    setTargetPos(24);
-    setGameOver(false);
-    setGameWon(false);
-    setIsHiding(false);
-    setTimeLeft(35);
-    updateGuardLasers([4, 8, 16, 20]);
-    setCurrentScreen('game');
-  };
-
-  // حركات الليزر والأضواء أمام البوليس
-  const updateGuardLasers = (currentGuards: number[]) => {
-    let lasers: number[] = [];
-    currentGuards.forEach((gPos) => {
-      // ضوء الليزر كيكون فـ المربعات المجاورة للبوليسي
-      if (gPos + 1 < 25 && (gPos + 1) % 5 !== 0) lasers.push(gPos + 1);
-      if (gPos - 1 >= 0 && gPos % 5 !== 0) lasers.push(gPos - 1);
-      if (gPos + 5 < 25) lasers.push(gPos + 5);
-      if (gPos - 5 >= 0) lasers.push(gPos - 5);
-    });
-    setLaserZones(lasers);
-  };
-
-  // حركة البوليس الدوري فـ الدار كل ثانية
   useEffect(() => {
-    if (currentScreen !== 'game' || gameOver || gameWon) return;
+    if (screen !== 'game' || !canvasRef.current) return;
 
-    const interval = setInterval(() => {
-      setGuards((prevGuards) => {
-        const newGuards = prevGuards.map((g) => {
-          const move = Math.random() > 0.5 ? 1 : -1;
-          const nextPos = g + move;
-          return nextPos >= 0 && nextPos < 25 ? nextPos : g;
-        });
-        updateGuardLasers(newGuards);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-        // التحقق واش البوليسي أو الليزر كشف اللاعب (إلا ما كانش متخبي)
-        if (!isHiding) {
-          if (newGuards.includes(playerPos) || laserZones.includes(playerPos)) {
+    // Game Variables
+    let animationFrameId: number;
+    let player = { x: 50, y: 350, radius: 12, speed: 3, isHiding: false };
+    let target = { x: 330, y: 50, radius: 10 };
+    let joystick = { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0 };
+
+    // 3 Guards moving around rooms
+    let guards = [
+      { x: 150, y: 100, vx: 2, vy: 0, radius: 12, visionRadius: 60 },
+      { x: 250, y: 250, vx: 0, vy: 2, radius: 12, visionRadius: 60 },
+      { x: 100, y: 200, vx: 1.5, vy: -1.5, radius: 12, visionRadius: 60 },
+    ];
+
+    // Furniture / Hiding Furniture (Tables, Sofas, Beds)
+    let furniture = [
+      { x: 120, y: 140, w: 50, h: 30, label: '🛏️' },
+      { x: 220, y: 80, w: 40, h: 40, label: '🛋️' },
+      { x: 80, y: 260, w: 60, h: 35, label: '📦' },
+      { x: 240, y: 300, w: 45, h: 45, label: '🗄️' },
+    ];
+
+    // House Walls (Layout)
+    let walls = [
+      { x: 0, y: 0, w: 400, h: 10 }, // Top Wall
+      { x: 0, y: 390, w: 400, h: 10 }, // Bottom Wall
+      { x: 0, y: 0, w: 10, h: 400 }, // Left Wall
+      { x: 390, y: 0, w: 10, h: 400 }, // Right Wall
+      { x: 180, y: 0, w: 10, h: 280 }, // Internal Wall 1
+      { x: 0, y: 220, w: 120, h: 10 }, // Internal Wall 2
+    ];
+
+    // Touch & Control Handlers
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      joystick.active = true;
+      joystick.startX = touch.clientX - rect.left;
+      joystick.startY = touch.clientY - rect.top;
+      joystick.moveX = 0;
+      joystick.moveY = 0;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!joystick.active) return;
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const dx = touch.clientX - rect.left - joystick.startX;
+      const dy = touch.clientY - rect.top - joystick.startY;
+      const dist = Math.hypot(dx, dy);
+      const maxDist = 40;
+      
+      const angle = Math.atan2(dy, dx);
+      const speedMult = Math.min(dist, maxDist) / maxDist;
+      
+      joystick.moveX = Math.cos(angle) * player.speed * speedMult;
+      joystick.moveY = Math.sin(angle) * player.speed * speedMult;
+    };
+
+    const handleTouchEnd = () => {
+      joystick.active = false;
+      joystick.moveX = 0;
+      joystick.moveY = 0;
+    };
+
+    canvas.addEventListener('touchstart', handleTouchStart);
+    canvas.addEventListener('touchmove', handleTouchMove);
+    canvas.addEventListener('touchend', handleTouchEnd);
+
+    // Main Game Loop
+    const render = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 1. Draw House Floor & Rooms
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Entry Door (Doorway)
+      ctx.fillStyle = '#10b981';
+      ctx.fillRect(40, 390, 40, 10);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '10px sans-serif';
+      ctx.fillText('ENTRY 🚪', 35, 385);
+
+      // 2. Draw Furniture & Check Hiding
+      player.isHiding = false;
+      furniture.forEach((item) => {
+        ctx.fillStyle = '#1e293b';
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 1;
+        ctx.fillRect(item.x, item.y, item.w, item.h);
+        ctx.strokeRect(item.x, item.y, item.w, item.h);
+        ctx.fillText(item.label, item.x + item.w / 4, item.y + item.h / 1.5);
+
+        // Check if player inside furniture
+        if (
+          player.x > item.x &&
+          player.x < item.x + item.w &&
+          player.y > item.y &&
+          player.y < item.y + item.h
+        ) {
+          player.isHiding = true;
+        }
+      });
+
+      // 3. Draw Walls
+      ctx.fillStyle = '#334155';
+      walls.forEach((w) => ctx.fillRect(w.x, w.y, w.w, w.h));
+
+      // 4. Update & Draw Target (Treasure)
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillText('💎', target.x - 6, target.y + 4);
+
+      // 5. Update & Draw Guards with Vision Cones
+      guards.forEach((g) => {
+        g.x += g.vx;
+        g.y += g.vy;
+
+        // Bounce guards on walls
+        if (g.x <= 20 || g.x >= 370) g.vx *= -1;
+        if (g.y <= 20 || g.y >= 370) g.vy *= -1;
+
+        // Draw Police Cone of Light
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.25)';
+        ctx.beginPath();
+        ctx.arc(g.x, g.y, g.visionRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw Guard 👮
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(g.x, g.y, g.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillText('👮', g.x - 6, g.y + 4);
+
+        // Check Detection (If player not hiding)
+        if (!player.isHiding) {
+          const distToGuard = Math.hypot(player.x - g.x, player.y - g.y);
+          if (distToGuard < g.visionRadius) {
             setGameOver(true);
-            playSound('alarm');
           }
         }
-        return newGuards;
       });
-    }, 1200);
 
-    return () => clearInterval(interval);
-  }, [playerPos, isHiding, laserZones, currentScreen, gameOver, gameWon]);
+      // 6. Move Player via Joystick
+      player.x += joystick.moveX;
+      player.y += joystick.moveY;
 
-  // المؤقت
-  useEffect(() => {
-    if (currentScreen !== 'game' || gameOver || gameWon || timeLeft <= 0) return;
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          setGameOver(true);
-          playSound('alarm');
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft, gameOver, gameWon, currentScreen]);
+      // Keep Player Inside Canvas
+      player.x = Math.max(15, Math.min(385, player.x));
+      player.y = Math.max(15, Math.min(385, player.y));
 
-  // حركة اللاعب والتخبي
-  const handleCellClick = (index: number) => {
-    if (gameOver || gameWon) return;
+      // Draw Player 🥷
+      ctx.fillStyle = player.isHiding ? '#10b981' : '#3b82f6';
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillText(player.isHiding ? '📦' : '🥷', player.x - 6, player.y + 4);
 
-    setPlayerPos(index);
-
-    // إذا تبتي فوق أثاث/مخبأ 🛋️
-    if (hidingSpots.includes(index)) {
-      setIsHiding(true);
-      playSound('hide');
-    } else {
-      setIsHiding(false);
-      playSound('move');
-
-      // إذا قستي البوليسي 👮 أو ضوء الليزر 🔴
-      if (guards.includes(index) || laserZones.includes(index)) {
-        setGameOver(true);
-        playSound('alarm');
-        return;
+      // Check Win Condition
+      const distToTarget = Math.hypot(player.x - target.x, player.y - target.y);
+      if (distToTarget < 20) {
+        setGameWon(true);
       }
-    }
 
-    // إذا وصلتي للكنز 💎
-    if (index === targetPos) {
-      playSound('gem');
-      setGameWon(true);
-      const newScore = score + 20;
-      setScore(newScore);
-      if (newScore > highScore) setHighScore(newScore);
-    }
-  };
+      // Draw Joystick Overlay
+      if (joystick.active) {
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.5)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(joystick.startX, joystick.startY, 40, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = '#3b82f6';
+        ctx.beginPath();
+        ctx.arc(
+          joystick.startX + joystick.moveX * 8,
+          joystick.startY + joystick.moveY * 8,
+          15,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+
+      if (!gameOver && !gameWon) {
+        animationFrameId = requestAnimationFrame(render);
+      }
+    };
+
+    render();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      canvas.removeEventListener('touchstart', handleTouchStart);
+      canvas.removeEventListener('touchmove', handleTouchMove);
+      canvas.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [screen, gameOver, gameWon]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4 select-none">
       
-      {/* 1. الصفحة الرئيسية */}
-      {currentScreen === 'welcome' && (
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl max-w-xs w-full text-center shadow-2xl animate-fade-in">
+      {/* 1. WELCOME SCREEN WITH NEW ROYAL BLUE LOGO */}
+      {screen === 'welcome' && (
+        <div className="bg-slate-900 border border-blue-900/50 p-6 rounded-3xl max-w-xs w-full text-center shadow-2xl">
+          
+          {/* LOGO BLUE EDITION */}
           <div className="relative inline-block mb-4">
-            <div className="w-20 h-20 bg-rose-500/10 border-2 border-rose-500 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3">
-              <Shield size={42} className="text-rose-400" />
+            <div className="w-24 h-24 bg-blue-600/10 border-2 border-blue-500 rounded-3xl flex items-center justify-center shadow-lg shadow-blue-500/20 transform -rotate-3">
+              <Shield size={50} className="text-blue-500" />
             </div>
-            <div className="absolute -bottom-1 -right-1 bg-slate-950 p-1 rounded-full border border-slate-700">
-              <Zap size={18} className="text-amber-400" />
+            <div className="absolute -bottom-1 -right-1 bg-slate-950 p-1.5 rounded-full border border-blue-400">
+              <Eye size={20} className="text-blue-400" />
             </div>
           </div>
 
-          <h1 className="text-2xl font-black text-rose-500 tracking-wider mb-1 uppercase">
+          <h1 className="text-2xl font-black text-blue-500 tracking-wider mb-1 uppercase">
             SHADOW ESCAPE
           </h1>
-          <p className="text-slate-400 text-xs mb-6">Évite la Police & les Lasers!</p>
+          <p className="text-slate-400 text-xs mb-6">Infiltration & Tactical Stealth</p>
           
           <div className="mb-5 text-left">
-            <label className="text-xs text-slate-300 font-bold mb-1 block">Nom du Joueur:</label>
+            <label className="text-xs text-slate-300 font-bold mb-1 block">Nom de l'Agent:</label>
             <div className="relative">
               <input
                 type="text"
-                placeholder="Ex: Agent 007"
+                placeholder="Ex: Agent Shadow"
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 px-3 pl-9 text-sm text-amber-300 focus:outline-none focus:border-amber-500"
+                className="w-full bg-slate-950 border border-blue-800/60 rounded-xl py-2.5 px-3 pl-9 text-sm text-blue-300 focus:outline-none focus:border-blue-500"
               />
               <User size={16} className="absolute left-3 top-3 text-slate-500" />
             </div>
@@ -196,104 +258,58 @@ export default function App() {
 
           <button
             onClick={() => {
-              if (playerName.trim()) startGame();
+              if (playerName.trim()) {
+                setGameOver(false);
+                setGameWon(false);
+                setScreen('game');
+              }
             }}
             disabled={!playerName.trim()}
             className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition ${
               playerName.trim()
-                ? 'bg-rose-600 hover:bg-rose-700 text-white active:scale-95'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white active:scale-95 shadow-blue-600/30'
                 : 'bg-slate-800 text-slate-600 cursor-not-allowed'
             }`}
           >
-            INFILTRER LA MAISON <Play size={16} />
+            JOUER <Play size={16} />
           </button>
         </div>
       )}
 
-      {/* 2. واجهة اللعب والخريطة */}
-      {currentScreen === 'game' && (
-        <div className="flex flex-col items-center w-full max-w-xs animate-fade-in">
+      {/* 2. REALISTIC TOP-DOWN GAME SCREEN */}
+      {screen === 'game' && (
+        <div className="flex flex-col items-center w-full max-w-xs">
           
-          <div className="flex justify-between items-center w-full mb-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-300 font-bold">🥷 {playerName}</span>
-              {isHiding && <span className="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-1.5 py-0.5 rounded">Caché 📦</span>}
-            </div>
-            <div className="text-rose-400 font-bold text-sm">
-              ⏱️ {timeLeft}s
-            </div>
+          <div className="flex justify-between items-center w-full mb-2 bg-slate-900 p-2.5 rounded-xl border border-blue-900/40">
+            <span className="text-xs text-blue-400 font-bold">🥷 {playerName}</span>
+            <span className="text-[10px] text-slate-400">Toucher l'écran pour diriger</span>
             <button
-              onClick={() => setCurrentScreen('welcome')}
-              className="text-xs bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-slate-300"
+              onClick={() => setScreen('welcome')}
+              className="text-xs bg-slate-800 px-2 py-1 rounded text-slate-300"
             >
-              Quitter 🚪
+              Quitter
             </button>
           </div>
 
-          {/* Dictionnaire de la carte */}
-          <div className="flex justify-around w-full text-[9px] text-slate-400 mb-2 bg-slate-900/60 p-2 rounded-xl border border-slate-800">
-            <span>🥷 Joueur</span>
-            <span>👮 Police</span>
-            <span className="text-rose-400">🔴 Laser</span>
-            <span className="text-amber-400">🛋️ Meuble</span>
-            <span>💎 Trésor</span>
+          {/* GAME CANVAS (400x400) */}
+          <div className="relative border-2 border-blue-600/40 rounded-2xl overflow-hidden shadow-2xl">
+            <canvas ref={canvasRef} width={400} height={400} className="block touch-none" />
           </div>
 
-          {/* الخريطة 5x5 */}
-          <div 
-            className="grid gap-1.5 bg-slate-950 p-3 rounded-2xl border-2 border-slate-800 w-full aspect-square shadow-2xl relative"
-            style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}
-          >
-            {Array.from({ length: gridSize * gridSize }).map((_, i) => {
-              const isPlayer = i === playerPos;
-              const isTarget = i === targetPos;
-              const isGuard = guards.includes(i);
-              const isLaser = laserZones.includes(i);
-              const isHide = hidingSpots.includes(i);
-
-              return (
-                <button
-                  key={i}
-                  onClick={() => handleCellClick(i)}
-                  disabled={gameOver || gameWon}
-                  className={`relative rounded-xl flex items-center justify-center text-lg shadow-inner transition duration-150 border ${
-                    isLaser && !isHide
-                      ? 'bg-rose-950/70 border-rose-600 animate-pulse' // ضوء الليزر الأحمر
-                      : isHide
-                      ? 'bg-amber-950/40 border-amber-700/60' // مكان أثاث/مخبأ
-                      : 'bg-slate-900 border-slate-800 hover:bg-slate-800'
-                  }`}
-                >
-                  {/* اللاعب 🥷 */}
-                  {isPlayer && <span className="z-10 animate-bounce">🥷</span>}
-
-                  {/* الأثاث/المخبأ 🛋️ */}
-                  {isHide && !isPlayer && <span>🛋️</span>}
-
-                  {/* البوليسي 👮 */}
-                  {isGuard && <span className="z-10">👮</span>}
-
-                  {/* ضوء الليزر 🔴 */}
-                  {isLaser && !isGuard && !isPlayer && !isHide && <span className="text-xs">🔴</span>}
-
-                  {/* الكنز المستهدف 💎 */}
-                  {isTarget && !isPlayer && <span>💎</span>}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Game Over / Win Modal */}
+          {/* GAME OVER / WIN MODAL */}
           {(gameOver || gameWon) && (
-            <div className="mt-4 bg-slate-900 border border-slate-800 p-4 rounded-xl text-center w-full shadow-2xl">
-              <h2 className={`text-lg font-bold mb-1 ${gameWon ? 'text-emerald-400' : 'text-rose-500'}`}>
-                {gameWon ? '🎉 TRESOR VOLE! MISSION REUSSIE!' : '🚨 TOUCHÉ PAR LE LASER / POLICE! T\'ES MORT!'}
+            <div className="mt-3 bg-slate-900 border border-slate-800 p-4 rounded-xl text-center w-full">
+              <h2 className={`text-base font-bold mb-1 ${gameWon ? 'text-emerald-400' : 'text-rose-500'}`}>
+                {gameWon ? '🎉 MISSION REUSSIE! TRESOR VOLE!' : '🚨 LA POLICE T\'A ATTRAPÉ!'}
               </h2>
               <button
-                onClick={startGame}
-                className="mt-3 w-full py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1 shadow-lg"
+                onClick={() => {
+                  setGameOver(false);
+                  setGameWon(false);
+                }}
+                className="mt-2 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1"
               >
-                <RefreshCw size={14} /> REESSAYER
+                <RefreshCw size={14} /> Recommencer
               </button>
             </div>
           )}
@@ -303,5 +319,5 @@ export default function App() {
 
     </div>
   );
-      }
+                                       }
 
