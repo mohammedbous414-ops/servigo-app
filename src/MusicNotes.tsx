@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Music, Plus, Trash2, FileText, Volume2 } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Music, Plus, Trash2, FileText, Disc, Upload, Sparkles, Volume2 } from 'lucide-react';
 
 interface Note {
   id: number;
@@ -18,20 +18,20 @@ interface Track {
 export default function MusicNotesApp() {
   const [activeTab, setActiveTab] = useState<'player' | 'notes'>('player');
 
-  const [tracks] = useState<Track[]>([
-    { id: 1, title: "Mon Morceau 01", artist: "Mon Studio", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-    { id: 2, title: "Beat & Melody 02", artist: "Pro-Studio", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
-    { id: 3, title: "Inspiration Flow", artist: "Rayan Music", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
+  const [tracks, setTracks] = useState<Track[]>([
+    { id: 1, title: "Studio Demo Track", artist: "Beat & Note", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
   ]);
 
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Mémorandum / Notes
   const [notes, setNotes] = useState<Note[]>(() => {
     const saved = localStorage.getItem('app_notes');
     return saved ? JSON.parse(saved) : [
-      { id: 1, title: 'Idée de Chanson', content: 'Écrire un refrain sur le rythme de la guitare...', date: 'Aujourd\'hui' }
+      { id: 1, title: 'فكرة أغنية جديدة 🎵', content: 'كتابة الكلمات على إيقاع السول والفانك...', date: 'اليوم' }
     ];
   });
 
@@ -41,6 +41,24 @@ export default function MusicNotesApp() {
   useEffect(() => {
     localStorage.setItem('app_notes', JSON.stringify(notes));
   }, [notes]);
+
+  // Ajouter un fichier audio depuis le téléphone (Lark Player files / Local files)
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const fileUrl = URL.createObjectURL(file);
+      const newTrack: Track = {
+        id: Date.now(),
+        title: file.name.replace(/\.[^/.]+$/, ""),
+        artist: "من هاتفي",
+        url: fileUrl
+      };
+      setTracks([newTrack, ...tracks]);
+      setCurrentTrackIndex(0);
+      setIsPlaying(true);
+      setTimeout(() => audioRef.current?.play(), 100);
+    }
+  };
 
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -53,11 +71,13 @@ export default function MusicNotesApp() {
   };
 
   const nextTrack = () => {
+    if (tracks.length === 0) return;
     setCurrentTrackIndex((prev) => (prev + 1) % tracks.length);
     setIsPlaying(false);
   };
 
   const prevTrack = () => {
+    if (tracks.length === 0) return;
     setCurrentTrackIndex((prev) => (prev - 1 + tracks.length) % tracks.length);
     setIsPlaying(false);
   };
@@ -66,9 +86,9 @@ export default function MusicNotesApp() {
     if (!newTitle.trim() && !newContent.trim()) return;
     const newNote: Note = {
       id: Date.now(),
-      title: newTitle || 'Sans titre',
+      title: newTitle || 'ملاحظة جديدة',
       content: newContent,
-      date: new Date().toLocaleDateString('fr-FR')
+      date: new Date().toLocaleDateString('ar-MA')
     };
     setNotes([newNote, ...notes]);
     setNewTitle('');
@@ -80,79 +100,111 @@ export default function MusicNotesApp() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-between p-4 max-w-md mx-auto select-none">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-between p-4 max-w-md mx-auto select-none font-sans">
       
       <audio
         ref={audioRef}
-        src={tracks[currentTrackIndex].url}
+        src={tracks[currentTrackIndex]?.url}
         onEnded={nextTrack}
       />
 
-      {/* Header */}
-      <div className="w-full bg-slate-900 border border-blue-900/50 p-4 rounded-2xl flex items-center justify-between shadow-lg mb-4">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-blue-600 rounded-xl">
-            <Music size={20} className="text-white" />
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileUpload}
+        accept="audio/*"
+        className="hidden"
+      />
+
+      {/* Modern Neon Header with New Logo */}
+      <div className="w-full bg-gradient-to-r from-purple-900/40 via-slate-900 to-indigo-900/40 border border-purple-500/30 p-4 rounded-3xl flex items-center justify-between shadow-2xl backdrop-blur-md mb-4">
+        <div className="flex items-center gap-3">
+          <div className="relative flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 shadow-lg shadow-purple-500/30">
+            <Disc size={26} className={`text-white ${isPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '4s' }} />
+            <Sparkles size={14} className="text-cyan-300 absolute -top-1 -right-1 animate-bounce" />
           </div>
           <div>
-            <h1 className="text-base font-black tracking-wider text-blue-400">STUDIO NOTE & MUSIC</h1>
-            <p className="text-[10px] text-slate-400">Musique & Prise de notes</p>
+            <h1 className="text-lg font-black tracking-wider bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+              BEAT & NOTE
+            </h1>
+            <p className="text-[10px] text-purple-300/70 font-medium">Create • Play • Capture</p>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="w-full flex bg-slate-900 p-1 rounded-xl border border-slate-800 mb-4">
+      {/* Tabs Switcher */}
+      <div className="w-full flex bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 mb-4 shadow-inner">
         <button
           onClick={() => setActiveTab('player')}
-          className={`flex-1 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition ${
-            activeTab === 'player' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+          className={`flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all duration-300 ${
+            activeTab === 'player' 
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/30' 
+              : 'text-slate-400 hover:text-white'
           }`}
         >
-          <Volume2 size={16} /> Musique
+          <Volume2 size={16} /> مشغل الموسيقى
         </button>
         <button
           onClick={() => setActiveTab('notes')}
-          className={`flex-1 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition ${
-            activeTab === 'notes' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+          className={`flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all duration-300 ${
+            activeTab === 'notes' 
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/30' 
+              : 'text-slate-400 hover:text-white'
           }`}
         >
-          <FileText size={16} /> Mémorandum ({notes.length})
+          <FileText size={16} /> المذكرات ({notes.length})
         </button>
       </div>
 
-      {/* Music Player Tab */}
+      {/* Player Tab */}
       {activeTab === 'player' && (
         <div className="w-full flex-1 flex flex-col items-center justify-center">
-          <div className="relative w-48 h-48 mb-6 flex items-center justify-center">
-            <div className={`absolute inset-0 bg-gradient-to-tr from-blue-600 to-indigo-900 rounded-full blur-xl opacity-40 ${isPlaying ? 'animate-pulse' : ''}`}></div>
-            <div className={`w-44 h-44 bg-slate-900 border-4 border-blue-500/50 rounded-full flex items-center justify-center shadow-2xl ${isPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '10s' }}>
-              <div className="w-16 h-16 bg-slate-950 border-2 border-blue-400 rounded-full flex items-center justify-center">
-                <Music size={24} className="text-blue-400" />
+          
+          {/* Animated Vinyl/CD Player Graphic */}
+          <div className="relative w-48 h-48 mb-4 flex items-center justify-center">
+            <div className={`absolute inset-0 bg-gradient-to-tr from-purple-600 via-pink-600 to-cyan-500 rounded-full blur-2xl opacity-30 ${isPlaying ? 'animate-pulse' : ''}`}></div>
+            <div className={`w-44 h-44 bg-slate-900 border-4 border-purple-500/40 rounded-full flex items-center justify-center shadow-2xl relative overflow-hidden ${isPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }}>
+              <div className="absolute inset-0 bg-[radial-gradient(circle,_transparent_30%,_rgba(255,255,255,0.05)_70%)]"></div>
+              <div className="w-16 h-16 bg-slate-950 border-2 border-cyan-400 rounded-full flex items-center justify-center z-10 shadow-inner">
+                <Music size={24} className="text-cyan-400" />
               </div>
             </div>
           </div>
 
-          <div className="text-center mb-6">
-            <h2 className="text-lg font-bold text-white">{tracks[currentTrackIndex].title}</h2>
-            <p className="text-xs text-blue-400 font-medium">{tracks[currentTrackIndex].artist}</p>
+          <div className="text-center mb-4">
+            <h2 className="text-base font-bold text-white px-2 truncate max-w-[260px]">
+              {tracks[currentTrackIndex]?.title || "لا توجد أغنية"}
+            </h2>
+            <p className="text-xs text-purple-400 font-medium mt-0.5">
+              {tracks[currentTrackIndex]?.artist || "إختر مقطعاً صوتياً"}
+            </p>
           </div>
 
-          <div className="flex items-center justify-center gap-6 mb-8">
-            <button onClick={prevTrack} className="p-3 bg-slate-900 hover:bg-slate-800 rounded-full border border-slate-800 text-blue-400 active:scale-95">
-              <SkipBack size={22} />
+          {/* Controls */}
+          <div className="flex items-center justify-center gap-6 mb-6">
+            <button onClick={prevTrack} className="p-3 bg-slate-900 hover:bg-slate-800 rounded-2xl border border-slate-800 text-purple-400 active:scale-95 transition">
+              <SkipBack size={20} />
             </button>
-            <button onClick={togglePlay} className="p-5 bg-blue-600 hover:bg-blue-500 rounded-full text-white shadow-lg shadow-blue-600/40 active:scale-95">
-              {isPlaying ? <Pause size={28} /> : <Play size={28} className="ml-1" />}
+            <button onClick={togglePlay} className="p-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-2xl text-white shadow-xl shadow-purple-600/40 active:scale-95 transition">
+              {isPlaying ? <Pause size={26} /> : <Play size={26} className="ml-1" />}
             </button>
-            <button onClick={nextTrack} className="p-3 bg-slate-900 hover:bg-slate-800 rounded-full border border-slate-800 text-blue-400 active:scale-95">
-              <SkipForward size={22} />
+            <button onClick={nextTrack} className="p-3 bg-slate-900 hover:bg-slate-800 rounded-2xl border border-slate-800 text-purple-400 active:scale-95 transition">
+              <SkipForward size={20} />
             </button>
           </div>
 
-          <div className="w-full bg-slate-900/80 border border-slate-800/80 rounded-2xl p-3">
-            <h3 className="text-xs font-bold text-slate-400 mb-2 px-1">Ma Playlist:</h3>
-            <div className="space-y-1 max-h-36 overflow-y-auto">
+          {/* Add Local File Button (Lark Player support) */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full mb-3 py-3 bg-slate-900/90 border border-purple-500/40 hover:bg-purple-900/20 text-purple-300 font-bold rounded-2xl text-xs flex items-center justify-center gap-2 active:scale-95 shadow-lg transition"
+          >
+            <Upload size={16} className="text-cyan-400" /> إضافة أغنية من الهاتف / Lark Player
+          </button>
+
+          {/* Playlist */}
+          <div className="w-full bg-slate-900/70 border border-slate-800 rounded-2xl p-3 backdrop-blur-sm">
+            <h3 className="text-xs font-bold text-slate-400 mb-2 px-1">قائمة الأغاني ({tracks.length}):</h3>
+            <div className="space-y-1.5 max-h-28 overflow-y-auto pr-1">
               {tracks.map((t, idx) => (
                 <div
                   key={t.id}
@@ -162,10 +214,12 @@ export default function MusicNotesApp() {
                     setTimeout(() => audioRef.current?.play(), 100);
                   }}
                   className={`p-2.5 rounded-xl text-xs flex items-center justify-between cursor-pointer transition ${
-                    idx === currentTrackIndex ? 'bg-blue-600/20 border border-blue-500/40 text-blue-300' : 'hover:bg-slate-800 text-slate-300'
+                    idx === currentTrackIndex 
+                      ? 'bg-purple-600/20 border border-purple-500/50 text-purple-300 font-bold' 
+                      : 'hover:bg-slate-800 text-slate-300'
                   }`}
                 >
-                  <span className="font-semibold">{t.title}</span>
+                  <span className="truncate max-w-[180px]">{t.title}</span>
                   <span className="text-[10px] text-slate-500">{t.artist}</span>
                 </div>
               ))}
@@ -180,34 +234,34 @@ export default function MusicNotesApp() {
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 mb-4 shadow-md">
             <input
               type="text"
-              placeholder="Titre de la note / chanson..."
+              placeholder="عنوان الملاحظة / الأغنية..."
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 mb-2"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 mb-2"
             />
             <textarea
-              placeholder="Écrivez vos notes, paroles ou idées ici..."
+              placeholder="اكتب أفكارك، الكلمات، أو النوتات هنا..."
               value={newContent}
               onChange={(e) => setNewContent(e.target.value)}
               rows={3}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 resize-none mb-2"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 resize-none mb-2"
             />
             <button
               onClick={addNote}
-              className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1 active:scale-95"
+              className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1 active:scale-95 shadow-lg shadow-purple-600/30"
             >
-              <Plus size={16} /> Enregistrer la Note
+              <Plus size={16} /> حفظ الملاحظة
             </button>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-2 max-h-60 pr-1">
             {notes.length === 0 ? (
-              <p className="text-center text-xs text-slate-500 mt-6">Aucune note enregistrée.</p>
+              <p className="text-center text-xs text-slate-500 mt-6">لا توجد ملاحظات محفوظة.</p>
             ) : (
               notes.map((note) => (
-                <div key={note.id} className="bg-slate-900 border border-slate-800/80 p-3 rounded-2xl relative group">
+                <div key={note.id} className="bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl relative group shadow-md">
                   <div className="flex justify-between items-start mb-1">
-                    <h4 className="text-xs font-bold text-blue-400">{note.title}</h4>
+                    <h4 className="text-xs font-bold text-purple-400">{note.title}</h4>
                     <span className="text-[9px] text-slate-500">{note.date}</span>
                   </div>
                   <p className="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">{note.content}</p>
@@ -215,7 +269,7 @@ export default function MusicNotesApp() {
                     onClick={() => deleteNote(note.id)}
                     className="mt-2 text-[10px] text-rose-400 hover:text-rose-300 flex items-center gap-1"
                   >
-                    <Trash2 size={12} /> Supprimer
+                    <Trash2 size={12} /> حذف
                   </button>
                 </div>
               ))
@@ -224,10 +278,9 @@ export default function MusicNotesApp() {
         </div>
       )}
 
-      <div className="w-full text-center mt-4 text-[10px] text-slate-600">
-        Studio Note & Music App • 2026
+      <div className="w-full text-center mt-2 text-[10px] text-slate-600">
+        BEAT & NOTE Studio App • Edition 2026
       </div>
     </div>
   );
-              }
-          
+          }
