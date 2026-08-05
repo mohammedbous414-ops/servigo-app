@@ -1,17 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User, Shield, Gem, RefreshCw, Trophy, AlertTriangle, Play, Lock, Eye, Box, Skull } from 'lucide-react';
+import { Shield, Gem, RefreshCw, Play, Eye, User, Zap, AlertTriangle } from 'lucide-react';
 
 type Screen = 'welcome' | 'levels' | 'game';
-
-interface LevelConfig {
-  id: number;
-  name: string;
-  icon: string;
-  gridSize: number;
-  timeLimit: number;
-  guardCount: number;
-  trapCount: number;
-}
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
@@ -19,24 +9,23 @@ export default function App() {
   
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
-  const [currentLevel, setCurrentLevel] = useState<LevelConfig | null>(null);
-  
-  const [targetPos, setTargetPos] = useState(0);
-  const [guards, setGuards] = useState<number[]>([]);
-  const [traps, setTraps] = useState<number[]>([]);
-  const [hidingSpots, setHidingSpots] = useState<number[]>([]);
 
+  const gridSize = 5; // خريطة 5x5 (25 غرفة/مربع)
+  const [playerPos, setPlayerPos] = useState(0); // مكان اللاعب
+  const [targetPos, setTargetPos] = useState(24); // مكان الكنز
+
+  // أماكن 4 بوليسيين والاتجاه ديال الليزر ديالهم
+  const [guards, setGuards] = useState<number[]>([4, 8, 16, 20]);
+  const [laserZones, setLaserZones] = useState<number[]>([]); // أضواء الليزر
+  const [hidingSpots, setHidingSpots] = useState<number[]>([2, 7, 12, 17, 22]); // أماكن الأثاث والمخابئ
+
+  const [isHiding, setIsHiding] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [gameWon, setGameWon] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(30);
+  const [timeLeft, setTimeLeft] = useState(35);
 
-  const levels: LevelConfig[] = [
-    { id: 1, name: 'Villa Safehouse 🏠', icon: '🏠', gridSize: 4, timeLimit: 30, guardCount: 1, trapCount: 1 },
-    { id: 2, name: 'Secret Vault 🏛️', icon: '🏛️', gridSize: 5, timeLimit: 25, guardCount: 3, trapCount: 2 },
-    { id: 3, name: 'Royal Palace 🏰', icon: '🏰', gridSize: 6, timeLimit: 20, guardCount: 5, trapCount: 3 },
-  ];
-
-  const playSound = (type: 'gem' | 'alarm' | 'hide' | 'click') => {
+  // تشغيل الأصوات
+  const playSound = (type: 'gem' | 'alarm' | 'hide' | 'move') => {
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const osc = ctx.createOscillator();
@@ -54,16 +43,16 @@ export default function App() {
       } else if (type === 'alarm') {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(150, ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.3);
+        osc.frequency.linearRampToValueAtTime(700, ctx.currentTime + 0.4);
         gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
         osc.start();
-        osc.stop(ctx.currentTime + 0.3);
+        osc.stop(ctx.currentTime + 0.4);
       } else if (type === 'hide') {
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(400, ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(200, ctx.currentTime + 0.2);
-        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        osc.frequency.setValueAtTime(300, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(150, ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
         osc.start();
         osc.stop(ctx.currentTime + 0.2);
@@ -71,40 +60,59 @@ export default function App() {
     } catch (e) {}
   };
 
-  const startLevel = (lvl: LevelConfig) => {
-    setCurrentLevel(lvl);
-    setTimeLeft(lvl.timeLimit);
+  // بداية اللعبة وتوزيع الأضواء والمخابئ
+  const startGame = () => {
+    setPlayerPos(0);
+    setTargetPos(24);
     setGameOver(false);
     setGameWon(false);
-    
-    const totalCells = lvl.gridSize * lvl.gridSize;
-    const target = Math.floor(Math.random() * totalCells);
-    setTargetPos(target);
-
-    let hides: number[] = [];
-    while (hides.length < 3) {
-      const p = Math.floor(Math.random() * totalCells);
-      if (p !== target && !hides.includes(p)) hides.push(p);
-    }
-    setHidingSpots(hides);
-
-    let g: number[] = [];
-    while (g.length < lvl.guardCount) {
-      const p = Math.floor(Math.random() * totalCells);
-      if (p !== target && !hides.includes(p) && !g.includes(p)) g.push(p);
-    }
-    setGuards(g);
-
-    let t: number[] = [];
-    while (t.length < lvl.trapCount) {
-      const p = Math.floor(Math.random() * totalCells);
-      if (p !== target && !hides.includes(p) && !g.includes(p) && !t.includes(p)) t.push(p);
-    }
-    setTraps(t);
-
+    setIsHiding(false);
+    setTimeLeft(35);
+    updateGuardLasers([4, 8, 16, 20]);
     setCurrentScreen('game');
   };
 
+  // حركات الليزر والأضواء أمام البوليس
+  const updateGuardLasers = (currentGuards: number[]) => {
+    let lasers: number[] = [];
+    currentGuards.forEach((gPos) => {
+      // ضوء الليزر كيكون فـ المربعات المجاورة للبوليسي
+      if (gPos + 1 < 25 && (gPos + 1) % 5 !== 0) lasers.push(gPos + 1);
+      if (gPos - 1 >= 0 && gPos % 5 !== 0) lasers.push(gPos - 1);
+      if (gPos + 5 < 25) lasers.push(gPos + 5);
+      if (gPos - 5 >= 0) lasers.push(gPos - 5);
+    });
+    setLaserZones(lasers);
+  };
+
+  // حركة البوليس الدوري فـ الدار كل ثانية
+  useEffect(() => {
+    if (currentScreen !== 'game' || gameOver || gameWon) return;
+
+    const interval = setInterval(() => {
+      setGuards((prevGuards) => {
+        const newGuards = prevGuards.map((g) => {
+          const move = Math.random() > 0.5 ? 1 : -1;
+          const nextPos = g + move;
+          return nextPos >= 0 && nextPos < 25 ? nextPos : g;
+        });
+        updateGuardLasers(newGuards);
+
+        // التحقق واش البوليسي أو الليزر كشف اللاعب (إلا ما كانش متخبي)
+        if (!isHiding) {
+          if (newGuards.includes(playerPos) || laserZones.includes(playerPos)) {
+            setGameOver(true);
+            playSound('alarm');
+          }
+        }
+        return newGuards;
+      });
+    }, 1200);
+
+    return () => clearInterval(interval);
+  }, [playerPos, isHiding, laserZones, currentScreen, gameOver, gameWon]);
+
+  // المؤقت
   useEffect(() => {
     if (currentScreen !== 'game' || gameOver || gameWon || timeLeft <= 0) return;
     const timer = setInterval(() => {
@@ -120,23 +128,33 @@ export default function App() {
     return () => clearInterval(timer);
   }, [timeLeft, gameOver, gameWon, currentScreen]);
 
+  // حركة اللاعب والتخبي
   const handleCellClick = (index: number) => {
     if (gameOver || gameWon) return;
 
+    setPlayerPos(index);
+
+    // إذا تبتي فوق أثاث/مخبأ 🛋️
     if (hidingSpots.includes(index)) {
+      setIsHiding(true);
       playSound('hide');
-      return;
+    } else {
+      setIsHiding(false);
+      playSound('move');
+
+      // إذا قستي البوليسي 👮 أو ضوء الليزر 🔴
+      if (guards.includes(index) || laserZones.includes(index)) {
+        setGameOver(true);
+        playSound('alarm');
+        return;
+      }
     }
 
-    if (guards.includes(index) || traps.includes(index)) {
-      setGameOver(true);
-      playSound('alarm');
-      if (score > highScore) setHighScore(score);
-    } 
-    else if (index === targetPos) {
+    // إذا وصلتي للكنز 💎
+    if (index === targetPos) {
       playSound('gem');
       setGameWon(true);
-      const newScore = score + 10;
+      const newScore = score + 20;
       setScore(newScore);
       if (newScore > highScore) setHighScore(newScore);
     }
@@ -145,24 +163,22 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4">
       
-      {/* ================= 1. PAGE D'ACCUEIL (LOGO & NOM) ================= */}
+      {/* 1. الصفحة الرئيسية */}
       {currentScreen === 'welcome' && (
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl max-w-xs w-full text-center shadow-2xl animate-fade-in">
-          
-          {/* Nouveau Logo Design */}
           <div className="relative inline-block mb-4">
-            <div className="w-20 h-20 bg-amber-500/10 border-2 border-amber-500 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3">
-              <Shield size={42} className="text-amber-400" />
+            <div className="w-20 h-20 bg-rose-500/10 border-2 border-rose-500 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3">
+              <Shield size={42} className="text-rose-400" />
             </div>
             <div className="absolute -bottom-1 -right-1 bg-slate-950 p-1 rounded-full border border-slate-700">
-              <Eye size={18} className="text-emerald-400" />
+              <Zap size={18} className="text-amber-400" />
             </div>
           </div>
 
-          <h1 className="text-2xl font-black text-amber-400 tracking-wider mb-1 uppercase">
-            SHADOW THIEF
+          <h1 className="text-2xl font-black text-rose-500 tracking-wider mb-1 uppercase">
+            SHADOW ESCAPE
           </h1>
-          <p className="text-slate-400 text-xs mb-6">Stealth & Infiltration Game</p>
+          <p className="text-slate-400 text-xs mb-6">Évite la Police & les Lasers!</p>
           
           <div className="mb-5 text-left">
             <label className="text-xs text-slate-300 font-bold mb-1 block">Nom du Joueur:</label>
@@ -180,103 +196,59 @@ export default function App() {
 
           <button
             onClick={() => {
-              if (playerName.trim()) {
-                playSound('click');
-                setCurrentScreen('levels');
-              }
+              if (playerName.trim()) startGame();
             }}
             disabled={!playerName.trim()}
             className={`w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition ${
               playerName.trim()
-                ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 active:scale-95'
+                ? 'bg-rose-600 hover:bg-rose-700 text-white active:scale-95'
                 : 'bg-slate-800 text-slate-600 cursor-not-allowed'
             }`}
           >
-            COMMENCER <Play size={16} />
+            INFILTRER LA MAISON <Play size={16} />
           </button>
         </div>
       )}
 
-      {/* ================= 2. SELECTION DU NIVEAU ================= */}
-      {currentScreen === 'levels' && (
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl max-w-xs w-full shadow-2xl animate-fade-in">
-          <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-            <div>
-              <span className="text-xs text-slate-400">Joueur:</span>
-              <h2 className="text-amber-400 font-bold text-sm">🥷 {playerName}</h2>
-            </div>
-            <div className="text-emerald-400 font-bold text-xs flex items-center gap-1 bg-emerald-950/50 px-2 py-1 rounded-lg border border-emerald-800">
-              <Gem size={14} /> {score} pts
-            </div>
-          </div>
-
-          <h3 className="text-center font-extrabold text-slate-200 mb-4 text-sm uppercase tracking-wide">
-            Choisir la Mission
-          </h3>
-
-          <div className="space-y-3 mb-5">
-            {levels.map((lvl) => (
-              <button
-                key={lvl.id}
-                onClick={() => startLevel(lvl)}
-                className="w-full bg-slate-800 hover:bg-slate-700 active:scale-95 transition p-3 rounded-xl border border-slate-700/70 flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{lvl.icon}</span>
-                  <div className="text-left">
-                    <div className="font-bold text-sm text-slate-100">{lvl.name}</div>
-                    <div className="text-[10px] text-slate-400">Gardes: {lvl.guardCount} | Pièges: {lvl.trapCount}</div>
-                  </div>
-                </div>
-                <Play size={16} className="text-amber-400" />
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={() => setCurrentScreen('welcome')}
-            className="w-full py-2 bg-slate-950 text-slate-400 hover:text-white rounded-lg text-xs font-bold"
-          >
-            ← Changer le nom
-          </button>
-        </div>
-      )}
-
-      {/* ================= 3. EN JEU / MAISON ================= */}
-      {currentScreen === 'game' && currentLevel && (
+      {/* 2. واجهة اللعب والخريطة */}
+      {currentScreen === 'game' && (
         <div className="flex flex-col items-center w-full max-w-xs animate-fade-in">
           
           <div className="flex justify-between items-center w-full mb-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
             <div className="flex items-center gap-2">
               <span className="text-xs text-slate-300 font-bold">🥷 {playerName}</span>
+              {isHiding && <span className="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-1.5 py-0.5 rounded">Caché 📦</span>}
             </div>
             <div className="text-rose-400 font-bold text-sm">
               ⏱️ {timeLeft}s
             </div>
             <button
-              onClick={() => setCurrentScreen('levels')}
+              onClick={() => setCurrentScreen('welcome')}
               className="text-xs bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-slate-300"
             >
-              Missions 🗺️
+              Quitter 🚪
             </button>
           </div>
 
-          <div className="flex justify-around w-full text-[10px] text-slate-400 mb-2 bg-slate-900/50 p-1.5 rounded-lg border border-slate-800">
-            <span>🚪 Pièce</span>
-            <span>📦 Cachette</span>
+          {/* Dictionnaire de la carte */}
+          <div className="flex justify-around w-full text-[9px] text-slate-400 mb-2 bg-slate-900/60 p-2 rounded-xl border border-slate-800">
+            <span>🥷 Joueur</span>
+            <span>👮 Police</span>
+            <span className="text-rose-400">🔴 Laser</span>
+            <span className="text-amber-400">🛋️ Meuble</span>
             <span>💎 Trésor</span>
-            <span>👮 Garde</span>
-            <span>💣 Piège</span>
           </div>
 
+          {/* الخريطة 5x5 */}
           <div 
-            className="grid gap-2 bg-slate-900 p-3 rounded-2xl border border-slate-800 w-full aspect-square shadow-2xl relative"
-            style={{ gridTemplateColumns: `repeat(${currentLevel.gridSize}, minmax(0, 1fr))` }}
+            className="grid gap-1.5 bg-slate-950 p-3 rounded-2xl border-2 border-slate-800 w-full aspect-square shadow-2xl relative"
+            style={{ gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))` }}
           >
-            {Array.from({ length: currentLevel.gridSize * currentLevel.gridSize }).map((_, i) => {
+            {Array.from({ length: gridSize * gridSize }).map((_, i) => {
+              const isPlayer = i === playerPos;
               const isTarget = i === targetPos;
               const isGuard = guards.includes(i);
-              const isTrap = traps.includes(i);
+              const isLaser = laserZones.includes(i);
               const isHide = hidingSpots.includes(i);
 
               return (
@@ -284,31 +256,44 @@ export default function App() {
                   key={i}
                   onClick={() => handleCellClick(i)}
                   disabled={gameOver || gameWon}
-                  className={`relative rounded-xl flex items-center justify-center text-xl shadow-inner transition border ${
-                    isHide
-                      ? 'bg-amber-950/40 border-amber-800/60'
-                      : 'bg-slate-800 hover:bg-slate-700 border-slate-700/60'
+                  className={`relative rounded-xl flex items-center justify-center text-lg shadow-inner transition duration-150 border ${
+                    isLaser && !isHide
+                      ? 'bg-rose-950/70 border-rose-600 animate-pulse' // ضوء الليزر الأحمر
+                      : isHide
+                      ? 'bg-amber-950/40 border-amber-700/60' // مكان أثاث/مخبأ
+                      : 'bg-slate-900 border-slate-800 hover:bg-slate-800'
                   }`}
                 >
-                  {isTarget && !gameOver && !gameWon ? '💎' : null}
-                  {isHide && !gameOver ? '📦' : null}
-                  {isGuard && (gameOver || gameWon) ? '👮' : null}
-                  {isTrap && (gameOver || gameWon) ? '💣' : null}
+                  {/* اللاعب 🥷 */}
+                  {isPlayer && <span className="z-10 animate-bounce">🥷</span>}
+
+                  {/* الأثاث/المخبأ 🛋️ */}
+                  {isHide && !isPlayer && <span>🛋️</span>}
+
+                  {/* البوليسي 👮 */}
+                  {isGuard && <span className="z-10">👮</span>}
+
+                  {/* ضوء الليزر 🔴 */}
+                  {isLaser && !isGuard && !isPlayer && !isHide && <span className="text-xs">🔴</span>}
+
+                  {/* الكنز المستهدف 💎 */}
+                  {isTarget && !isPlayer && <span>💎</span>}
                 </button>
               );
             })}
           </div>
 
+          {/* Game Over / Win Modal */}
           {(gameOver || gameWon) && (
-            <div className="mt-4 bg-slate-900 border border-slate-800 p-4 rounded-xl text-center w-full">
+            <div className="mt-4 bg-slate-900 border border-slate-800 p-4 rounded-xl text-center w-full shadow-2xl">
               <h2 className={`text-lg font-bold mb-1 ${gameWon ? 'text-emerald-400' : 'text-rose-500'}`}>
-                {gameWon ? '🎉 MISSION REUSSIE!' : timeLeft === 0 ? '⏰ TEMPS ECOULE!' : '🚨 ELIMINE!'}
+                {gameWon ? '🎉 TRESOR VOLE! MISSION REUSSIE!' : '🚨 TOUCHÉ PAR LE LASER / POLICE! T\'ES MORT!'}
               </h2>
               <button
-                onClick={() => startLevel(currentLevel)}
-                className="mt-3 w-full py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-xs flex items-center justify-center gap-1"
+                onClick={startGame}
+                className="mt-3 w-full py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1 shadow-lg"
               >
-                <RefreshCw size={14} /> Rejouer
+                <RefreshCw size={14} /> REESSAYER
               </button>
             </div>
           )}
@@ -318,5 +303,5 @@ export default function App() {
 
     </div>
   );
-          }
-      
+      }
+
