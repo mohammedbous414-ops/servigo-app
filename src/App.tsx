@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, User, RefreshCw, Lock } from 'lucide-react';
+import { Play, User, RefreshCw, Shield } from 'lucide-react';
 
 export default function App() {
   const [screen, setScreen] = useState<'welcome' | 'game'>('welcome');
@@ -18,28 +18,35 @@ export default function App() {
 
     let animationFrameId: number;
 
-    let player = { x: 50, y: 350, r: 14, speed: 3, isHiding: false };
+    // Player State (Walking or Driving)
+    let player = {
+      x: 50,
+      y: 350,
+      speed: 3,
+      inCar: false,
+      carIndex: -1
+    };
 
-    let humans = [
-      { x: 120, y: 100, vx: 1.5, vy: 0, color: '#ef4444', skin: '#fca5a5', role: 'Garde 👮' },
-      { x: 280, y: 200, vx: 0, vy: 1.8, color: '#a855f7', skin: '#fde047', role: 'Habitant 👤' },
-      { x: 100, y: 220, vx: 1.2, vy: -1.2, color: '#ef4444', skin: '#fca5a5', role: 'Garde 👮' },
+    // City Cars (GTA Style)
+    let cars = [
+      { x: 120, y: 340, w: 35, h: 20, color: '#2563eb', label: '🏎️' },
+      { x: 220, y: 180, w: 35, h: 20, color: '#16a34a', label: '🚗' },
     ];
 
-    let furniture = [
-      { x: 80, y: 60, w: 70, h: 45, color: '#854d0e', name: 'Lit 🛏️' },
-      { x: 240, y: 60, w: 60, h: 40, color: '#1e3a8a', name: 'Canapé 🛋️' },
-      { x: 50, y: 220, w: 55, h: 45, color: '#065f46', name: 'Armoire 🗄️' },
-      { x: 250, y: 270, w: 65, h: 45, color: '#78350f', name: 'Table 🪵' },
+    // Police Patrol Vehicles
+    let police = [
+      { x: 200, y: 50, vx: 2, vy: 0, w: 35, h: 20, color: '#dc2626' },
+      { x: 50, y: 150, vx: 0, vy: 2, w: 35, h: 20, color: '#dc2626' },
     ];
 
-    let rooms = [
-      { x: 10, y: 10, w: 185, h: 185, bg: '#1e1b4b', border: '#4338ca', name: 'Chambre 🛏️' },
-      { x: 205, y: 10, w: 185, h: 185, bg: '#064e3b', border: '#059669', name: 'Salon 🛋️' },
-      { x: 10, y: 205, w: 185, h: 185, bg: '#451a03', border: '#d97706', name: 'Bureau 💼' },
-      { x: 205, y: 205, w: 185, h: 185, bg: '#312e81', border: '#6366f1', name: 'Cuisine 🍳' },
+    // City Buildings & Houses
+    let buildings = [
+      { x: 10, y: 10, w: 160, h: 140, color: '#1e293b', label: 'Banque 🏦' },
+      { x: 230, y: 10, w: 160, h: 140, color: '#334155', label: 'Maison 🏠' },
+      { x: 10, y: 220, w: 160, h: 100, color: '#0f172a', label: 'Safehouse 🚪' },
     ];
 
+    // Joystick Input
     let joystick = { active: false, startX: 0, startY: 0, moveX: 0, moveY: 0 };
 
     const handleTouchStart = (e: TouchEvent) => {
@@ -63,9 +70,10 @@ export default function App() {
 
       const angle = Math.atan2(dy, dx);
       const speedMult = Math.min(dist, maxDist) / maxDist;
+      const currentSpeed = player.inCar ? player.speed * 1.8 : player.speed;
 
-      joystick.moveX = Math.cos(angle) * player.speed * speedMult;
-      joystick.moveY = Math.sin(angle) * player.speed * speedMult;
+      joystick.moveX = Math.cos(angle) * currentSpeed * speedMult;
+      joystick.moveY = Math.sin(angle) * currentSpeed * speedMult;
     };
 
     const handleTouchEnd = () => {
@@ -78,111 +86,118 @@ export default function App() {
     canvas.addEventListener('touchmove', handleTouchMove);
     canvas.addEventListener('touchend', handleTouchEnd);
 
-    const drawPerson = (x: number, y: number, bodyColor: string, skinColor: string, label: string) => {
-      ctx.fillStyle = bodyColor;
-      ctx.beginPath();
-      ctx.arc(x, y, 12, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = skinColor;
-      ctx.beginPath();
-      ctx.arc(x, y - 3, 7, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '10px sans-serif';
-      ctx.fillText(label, x - 12, y - 15);
-    };
-
     const render = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      rooms.forEach((r) => {
-        ctx.fillStyle = r.bg;
-        ctx.fillRect(r.x, r.y, r.w, r.h);
-        ctx.strokeStyle = r.border;
-        ctx.lineWidth = 3;
-        ctx.strokeRect(r.x, r.y, r.w, r.h);
+      // 1. Draw Asphalt Streets (Roads)
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = 'bold 11px sans-serif';
-        ctx.fillText(r.name, r.x + 10, r.y + 22);
-      });
-
-      ctx.fillStyle = '#10b981';
-      ctx.fillRect(35, 385, 50, 10);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 10px sans-serif';
-      ctx.fillText('PORTE 🚪', 35, 380);
-
-      player.isHiding = false;
-      furniture.forEach((f) => {
-        ctx.fillStyle = f.color;
-        ctx.fillRect(f.x, f.y, f.w, f.h);
-        ctx.strokeStyle = '#f59e0b';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(f.x, f.y, f.w, f.h);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '10px sans-serif';
-        ctx.fillText(f.name, f.x + 6, f.y + f.h / 1.5);
-
-        if (
-          player.x > f.x &&
-          player.x < f.x + f.w &&
-          player.y > f.y &&
-          player.y < f.y + f.h
-        ) {
-          player.isHiding = true;
-        }
-      });
-
-      ctx.fillStyle = '#f59e0b';
+      // Road Lines
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([10, 10]);
       ctx.beginPath();
-      ctx.arc(330, 50, 12, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillText('💎 TRESO', 305, 75);
+      ctx.moveTo(195, 0);
+      ctx.lineTo(195, 400);
+      ctx.moveTo(0, 195);
+      ctx.lineTo(400, 195);
+      ctx.stroke();
+      ctx.setLineDash([]);
 
-      humans.forEach((h) => {
-        h.x += h.vx;
-        h.y += h.vy;
+      // 2. Draw City Buildings
+      buildings.forEach((b) => {
+        ctx.fillStyle = b.color;
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(b.x, b.y, b.w, b.h);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '11px sans-serif';
+        ctx.fillText(b.label, b.x + 10, b.y + 25);
+      });
 
-        if (h.x <= 25 || h.x >= 375) h.vx *= -1;
-        if (h.y <= 25 || h.y >= 375) h.vy *= -1;
+      // 3. Draw Parked Cars
+      cars.forEach((c, idx) => {
+        if (!player.inCar || player.carIndex !== idx) {
+          ctx.fillStyle = c.color;
+          ctx.fillRect(c.x, c.y, c.w, c.h);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(c.label, c.x + 8, c.y + 14);
 
-        ctx.fillStyle = h.color === '#ef4444' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(168, 85, 247, 0.2)';
-        ctx.beginPath();
-        ctx.arc(h.x, h.y, 60, 0, Math.PI * 2);
-        ctx.fill();
-
-        drawPerson(h.x, h.y, h.color, h.skin, h.role);
-
-        if (!player.isHiding) {
-          const dist = Math.hypot(player.x - h.x, player.y - h.y);
-          if (dist < 60) {
-            setGameOver(true);
+          // Enter Car Action
+          const dist = Math.hypot(player.x - (c.x + 15), player.y - (c.y + 10));
+          if (dist < 25 && !player.inCar) {
+            ctx.fillStyle = '#10b981';
+            ctx.fillText('Monter 🚗', c.x - 5, c.y - 5);
           }
         }
       });
 
+      // 4. Update & Draw Police Cars
+      police.forEach((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x <= 10 || p.x >= 355) p.vx *= -1;
+        if (p.y <= 10 || p.y >= 370) p.vy *= -1;
+
+        // Police Siren Light Effect
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
+        ctx.beginPath();
+        ctx.arc(p.x + 17, p.y + 10, 50, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '10px sans-serif';
+        ctx.fillText('🚔 POLICE', p.x + 2, p.y + 14);
+
+        // Catch Player Collision
+        const distToPlayer = Math.hypot(player.x - (p.x + 17), player.y - (p.y + 10));
+        if (distToPlayer < 35 && !player.inCar) {
+          setGameOver(true);
+        }
+      });
+
+      // 5. Update & Draw Player
       player.x += joystick.moveX;
       player.y += joystick.moveY;
-      player.x = Math.max(20, Math.min(380, player.x));
-      player.y = Math.max(20, Math.min(380, player.y));
+      player.x = Math.max(15, Math.min(385, player.x));
+      player.y = Math.max(15, Math.min(385, player.y));
 
-      if (!player.isHiding) {
-        drawPerson(player.x, player.y, '#2563eb', '#fed7aa', '🥷 Vous');
+      // Check if Player gets into a car
+      cars.forEach((c, idx) => {
+        const dist = Math.hypot(player.x - (c.x + 15), player.y - (c.y + 10));
+        if (dist < 15 && !player.inCar) {
+          player.inCar = true;
+          player.carIndex = idx;
+        }
+      });
+
+      if (player.inCar) {
+        ctx.fillStyle = '#2563eb';
+        ctx.fillRect(player.x - 17, player.y - 10, 35, 20);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('🏎️ VIP', player.x - 12, player.y + 4);
       } else {
-        ctx.fillStyle = '#10b981';
-        ctx.font = 'bold 12px sans-serif';
-        ctx.fillText('📦 Caché !', player.x - 20, player.y + 4);
+        ctx.fillStyle = '#3b82f6';
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('🥷', player.x - 6, player.y + 4);
       }
 
-      if (Math.hypot(player.x - 330, player.y - 50) < 20) {
+      // Safehouse Win Condition
+      if (player.x < 150 && player.y > 220 && player.y < 320) {
         setGameWon(true);
       }
 
+      // Draw Joystick Overlay
       if (joystick.active) {
-        ctx.strokeStyle = 'rgba(37, 99, 235, 0.6)';
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.6)';
         ctx.lineWidth = 3;
         ctx.beginPath();
         ctx.arc(joystick.startX, joystick.startY, 40, 0, Math.PI * 2);
@@ -191,8 +206,8 @@ export default function App() {
         ctx.fillStyle = '#2563eb';
         ctx.beginPath();
         ctx.arc(
-          joystick.startX + joystick.moveX * 7,
-          joystick.startY + joystick.moveY * 7,
+          joystick.startX + joystick.moveX * 6,
+          joystick.startY + joystick.moveY * 6,
           15,
           0,
           Math.PI * 2
@@ -217,55 +232,28 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4 select-none">
-      
-      {/* 1. WELCOME SCREEN WITH HIGH-END CUSTOM VECTOR LOGO */}
       {screen === 'welcome' && (
         <div className="bg-slate-900 border border-blue-900/60 p-6 rounded-3xl max-w-xs w-full text-center shadow-2xl relative overflow-hidden">
-          
-          {/* BACKGROUND GLOW EFFECT */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-blue-600/20 rounded-full blur-2xl pointer-events-none"></div>
-
-          {/* HIGH-END CUSTOM SHADOW ESCAPE EMBLEM (VECTOR LOGO) */}
-          <div className="relative mx-auto w-28 h-28 mb-4 flex items-center justify-center">
-            
-            {/* Outer Hexagon Shield with Blue Glow */}
-            <div className="absolute inset-0 bg-gradient-to-b from-blue-500 via-blue-700 to-slate-950 rounded-3xl rotate-45 border-2 border-blue-400/80 shadow-[0_0_25px_rgba(37,99,235,0.6)]"></div>
-            
-            {/* Inner Dark Core */}
-            <div className="absolute inset-1.5 bg-slate-950 rounded-2xl rotate-45 flex items-center justify-center border border-blue-500/40"></div>
-
-            {/* Ninja Mask & Eyes Graphic (CSS Stylized) */}
-            <div className="relative z-10 flex flex-col items-center justify-center">
-              {/* Ninja Head Hood */}
-              <div className="w-14 h-10 bg-gradient-to-b from-blue-600 to-slate-900 rounded-t-full relative flex items-center justify-center border-t border-blue-300">
-                {/* Glowing Blue Eyes visor */}
-                <div className="w-10 h-3 bg-slate-950 rounded-full border border-blue-400 flex items-center justify-around px-1 shadow-inner">
-                  <div className="w-2 h-1 bg-cyan-300 rounded-full shadow-[0_0_8px_#22d3ee]"></div>
-                  <div className="w-2 h-1 bg-cyan-300 rounded-full shadow-[0_0_8px_#22d3ee]"></div>
-                </div>
-              </div>
-              {/* Mask Lower Face */}
-              <div className="w-12 h-5 bg-slate-900 rounded-b-lg border-b border-blue-500/50 mt-0.5"></div>
-            </div>
-
+          <div className="relative mx-auto w-24 h-24 mb-4 flex items-center justify-center bg-blue-600/10 border-2 border-blue-500 rounded-3xl transform -rotate-3">
+            <Shield size={48} className="text-blue-500" />
           </div>
 
-          <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-blue-200 to-blue-500 tracking-wider mb-1 uppercase drop-shadow">
-            SHADOW ESCAPE
+          <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-blue-600 tracking-wider mb-1 uppercase">
+            SHADOW CITY GTA
           </h1>
           <p className="text-blue-300/70 text-[11px] font-semibold tracking-widest mb-6 uppercase">
-            Jeu d'Infiltration Tactique
+            Open World City & Chase
           </p>
-          
+
           <div className="mb-5 text-left">
-            <label className="text-xs text-slate-300 font-bold mb-1 block">Nom de l'Agent:</label>
+            <label className="text-xs text-slate-300 font-bold mb-1 block">Nom du Joueur:</label>
             <div className="relative">
               <input
                 type="text"
-                placeholder="Ex: Agent Shadow"
+                placeholder="Ex: Rayan"
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
-                className="w-full bg-slate-950 border border-blue-800/80 rounded-xl py-2.5 px-3 pl-9 text-sm text-blue-300 focus:outline-none focus:border-blue-500 shadow-inner"
+                className="w-full bg-slate-950 border border-blue-800/80 rounded-xl py-2.5 px-3 pl-9 text-sm text-blue-300 focus:outline-none focus:border-blue-500"
               />
               <User size={16} className="absolute left-3 top-3 text-blue-500" />
             </div>
@@ -280,26 +268,21 @@ export default function App() {
               }
             }}
             disabled={!playerName.trim()}
-            className={`w-full py-3.5 rounded-xl font-extrabold tracking-wide flex items-center justify-center gap-2 shadow-xl transition-all duration-200 ${
-              playerName.trim()
-                ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white active:scale-95 shadow-blue-600/40 border border-blue-400/30'
-                : 'bg-slate-800 text-slate-600 cursor-not-allowed'
-            }`}
+            className="w-full py-3.5 rounded-xl font-extrabold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 text-white shadow-xl"
           >
-            INFILTRER LA MAISON <Play size={18} />
+            ENTRER DANS LA VILLE <Play size={18} className="inline ml-1" />
           </button>
         </div>
       )}
 
-      {/* 2. GAME SCREEN */}
       {screen === 'game' && (
         <div className="flex flex-col items-center w-full max-w-xs">
           <div className="flex justify-between items-center w-full mb-2 bg-slate-900 p-2.5 rounded-xl border border-blue-900/40">
             <span className="text-xs text-blue-400 font-bold">🥷 {playerName}</span>
-            <span className="text-[10px] text-slate-400">Glisser pour déplacer</span>
+            <span className="text-[10px] text-slate-400">Glisser pour conduire/marcher</span>
             <button
               onClick={() => setScreen('welcome')}
-              className="text-xs bg-slate-800 px-2.5 py-1 rounded-lg text-slate-300 hover:bg-slate-700"
+              className="text-xs bg-slate-800 px-2 py-1 rounded text-slate-300"
             >
               Quitter
             </button>
@@ -310,16 +293,16 @@ export default function App() {
           </div>
 
           {(gameOver || gameWon) && (
-            <div className="mt-3 bg-slate-900 border border-slate-800 p-4 rounded-xl text-center w-full shadow-2xl">
+            <div className="mt-3 bg-slate-900 border border-slate-800 p-4 rounded-xl text-center w-full">
               <h2 className={`text-base font-bold mb-1 ${gameWon ? 'text-emerald-400' : 'text-rose-500'}`}>
-                {gameWon ? '🎉 MISSION REUSSIE! TRESOR VOLE!' : '🚨 ATTRAPÉ PAR LES HABITANTS / POLICE!'}
+                {gameWon ? '🎉 ARHIVÉ AU SAFEHOUSE!' : '🚨 ARRETÉ PAR LA POLICE!'}
               </h2>
               <button
                 onClick={() => {
                   setGameOver(false);
                   setGameWon(false);
                 }}
-                className="mt-2 w-full py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1 shadow-lg"
+                className="mt-2 w-full py-2 bg-blue-600 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1"
               >
                 <RefreshCw size={14} /> Recommencer
               </button>
@@ -327,8 +310,7 @@ export default function App() {
           )}
         </div>
       )}
-
     </div>
   );
-                        }
-                
+      }
+          
