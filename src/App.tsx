@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { User, Shield, Gem, RefreshCw, Trophy, Flame, AlertTriangle, Eye, Lock, Home, Play } from 'lucide-react';
+import { User, Shield, Gem, RefreshCw, Trophy, AlertTriangle, Play, Lock, Eye, Box, Skull } from 'lucide-react';
 
-// تعريف أنواع الواجهات والمستويات
 type Screen = 'welcome' | 'levels' | 'game';
 
 interface LevelConfig {
@@ -10,42 +9,33 @@ interface LevelConfig {
   icon: string;
   gridSize: number;
   timeLimit: number;
-  unlocked: boolean;
   guardCount: number;
   trapCount: number;
 }
 
 export default function App() {
-  // إدارة الواجهات
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
   const [playerName, setPlayerName] = useState('');
   
-  // اللعبة والنتائج
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [currentLevel, setCurrentLevel] = useState<LevelConfig | null>(null);
   
-  // عناصر الخريطة
   const [targetPos, setTargetPos] = useState(0);
   const [guards, setGuards] = useState<number[]>([]);
   const [traps, setTraps] = useState<number[]>([]);
   const [hidingSpots, setHidingSpots] = useState<number[]>([]);
-  const [playerPos, setPlayerPos] = useState(0);
-  const [isHiding, setIsHiding] = useState(false);
 
-  // حالة الجيم
   const [gameOver, setGameOver] = useState(false);
   const [gameWon, setGameWon] = useState(false);
   const [timeLeft, setTimeLeft] = useState(30);
 
-  // قائمة المستويات
   const levels: LevelConfig[] = [
-    { id: 1, name: 'شقة العمدة 🏠', icon: '🏠', gridSize: 4, timeLimit: 30, unlocked: true, guardCount: 1, trapCount: 1 },
-    { id: 2, name: 'المتحف السرّي 🏛️', icon: '🏛️', gridSize: 5, timeLimit: 25, unlocked: true, guardCount: 3, trapCount: 2 },
-    { id: 3, name: 'قصر الكونت 🏰', icon: '🏰', gridSize: 6, timeLimit: 20, unlocked: true, guardCount: 5, trapCount: 3 },
+    { id: 1, name: 'Villa Safehouse 🏠', icon: '🏠', gridSize: 4, timeLimit: 30, guardCount: 1, trapCount: 1 },
+    { id: 2, name: 'Secret Vault 🏛️', icon: '🏛️', gridSize: 5, timeLimit: 25, guardCount: 3, trapCount: 2 },
+    { id: 3, name: 'Royal Palace 🏰', icon: '🏰', gridSize: 6, timeLimit: 20, guardCount: 5, trapCount: 3 },
   ];
 
-  // تشغيل الأصوات
   const playSound = (type: 'gem' | 'alarm' | 'hide' | 'click') => {
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -81,21 +71,16 @@ export default function App() {
     } catch (e) {}
   };
 
-  // بدء المستوى
   const startLevel = (lvl: LevelConfig) => {
     setCurrentLevel(lvl);
     setTimeLeft(lvl.timeLimit);
     setGameOver(false);
     setGameWon(false);
-    setIsHiding(false);
     
     const totalCells = lvl.gridSize * lvl.gridSize;
-    
-    // تحديد الألماس
     const target = Math.floor(Math.random() * totalCells);
     setTargetPos(target);
 
-    // تحديد أماكن الاختباء (البيوتا/الأثاث)
     let hides: number[] = [];
     while (hides.length < 3) {
       const p = Math.floor(Math.random() * totalCells);
@@ -103,7 +88,6 @@ export default function App() {
     }
     setHidingSpots(hides);
 
-    // تحديد الحراس
     let g: number[] = [];
     while (g.length < lvl.guardCount) {
       const p = Math.floor(Math.random() * totalCells);
@@ -111,7 +95,6 @@ export default function App() {
     }
     setGuards(g);
 
-    // تحديد الفخاخ
     let t: number[] = [];
     while (t.length < lvl.trapCount) {
       const p = Math.floor(Math.random() * totalCells);
@@ -122,7 +105,6 @@ export default function App() {
     setCurrentScreen('game');
   };
 
-  // المؤقت
   useEffect(() => {
     if (currentScreen !== 'game' || gameOver || gameWon || timeLeft <= 0) return;
     const timer = setInterval(() => {
@@ -138,28 +120,19 @@ export default function App() {
     return () => clearInterval(timer);
   }, [timeLeft, gameOver, gameWon, currentScreen]);
 
-  // الضغط على الغرف
   const handleCellClick = (index: number) => {
     if (gameOver || gameWon) return;
 
-    setPlayerPos(index);
-
-    // 1. إذا ضغط على مكان اختباء
     if (hidingSpots.includes(index)) {
-      setIsHiding(true);
       playSound('hide');
       return;
     }
 
-    setIsHiding(false);
-
-    // 2. إذا ضغط على حارس أو فخ
     if (guards.includes(index) || traps.includes(index)) {
       setGameOver(true);
       playSound('alarm');
       if (score > highScore) setHighScore(score);
     } 
-    // 3. إذا وصل للألماس
     else if (index === targetPos) {
       playSound('gem');
       setGameWon(true);
@@ -170,24 +143,36 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4 dir-rtl">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4">
       
-      {/* ================= 1. واجهة إدخال اسم اللاعب ================= */}
+      {/* ================= 1. PAGE D'ACCUEIL (LOGO & NOM) ================= */}
       {currentScreen === 'welcome' && (
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-xs w-full text-center shadow-2xl animate-fade-in">
-          <div className="text-5xl mb-3">🥷</div>
-          <h1 className="text-2xl font-black text-amber-400 mb-1">سارق الظلال</h1>
-          <p className="text-slate-400 text-xs mb-6">أدخل اسمك للبدء في مهمات التخفي</p>
+        <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl max-w-xs w-full text-center shadow-2xl animate-fade-in">
           
-          <div className="mb-5 text-right">
-            <label className="text-xs text-slate-300 font-bold mb-1 block">اسم السارق:</label>
+          {/* Nouveau Logo Design */}
+          <div className="relative inline-block mb-4">
+            <div className="w-20 h-20 bg-amber-500/10 border-2 border-amber-500 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3">
+              <Shield size={42} className="text-amber-400" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 bg-slate-950 p-1 rounded-full border border-slate-700">
+              <Eye size={18} className="text-emerald-400" />
+            </div>
+          </div>
+
+          <h1 className="text-2xl font-black text-amber-400 tracking-wider mb-1 uppercase">
+            SHADOW THIEF
+          </h1>
+          <p className="text-slate-400 text-xs mb-6">Stealth & Infiltration Game</p>
+          
+          <div className="mb-5 text-left">
+            <label className="text-xs text-slate-300 font-bold mb-1 block">Nom du Joueur:</label>
             <div className="relative">
               <input
                 type="text"
-                placeholder="مثال: البطل 007"
+                placeholder="Ex: Agent 007"
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 px-3 pr-9 text-sm text-amber-300 focus:outline-none focus:border-amber-500"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl py-2.5 px-3 pl-9 text-sm text-amber-300 focus:outline-none focus:border-amber-500"
               />
               <User size={16} className="absolute left-3 top-3 text-slate-500" />
             </div>
@@ -207,17 +192,17 @@ export default function App() {
                 : 'bg-slate-800 text-slate-600 cursor-not-allowed'
             }`}
           >
-            متابعة لغرفة العمليات <Play size={16} />
+            COMMENCER <Play size={16} />
           </button>
         </div>
       )}
 
-      {/* ================= 2. واجهة اختيار المستوى ================= */}
+      {/* ================= 2. SELECTION DU NIVEAU ================= */}
       {currentScreen === 'levels' && (
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-xs w-full shadow-2xl animate-fade-in">
+        <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl max-w-xs w-full shadow-2xl animate-fade-in">
           <div className="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
             <div>
-              <span className="text-xs text-slate-400">اللاعب الحالي:</span>
+              <span className="text-xs text-slate-400">Joueur:</span>
               <h2 className="text-amber-400 font-bold text-sm">🥷 {playerName}</h2>
             </div>
             <div className="text-emerald-400 font-bold text-xs flex items-center gap-1 bg-emerald-950/50 px-2 py-1 rounded-lg border border-emerald-800">
@@ -225,7 +210,9 @@ export default function App() {
             </div>
           </div>
 
-          <h3 className="text-center font-extrabold text-slate-200 mb-4 text-sm">اختر الخريطة والمستوى:</h3>
+          <h3 className="text-center font-extrabold text-slate-200 mb-4 text-sm uppercase tracking-wide">
+            Choisir la Mission
+          </h3>
 
           <div className="space-y-3 mb-5">
             {levels.map((lvl) => (
@@ -236,9 +223,9 @@ export default function App() {
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{lvl.icon}</span>
-                  <div className="text-right">
+                  <div className="text-left">
                     <div className="font-bold text-sm text-slate-100">{lvl.name}</div>
-                    <div className="text-[10px] text-slate-400">حراس: {lvl.guardCount} | فخاخ: {lvl.trapCount}</div>
+                    <div className="text-[10px] text-slate-400">Gardes: {lvl.guardCount} | Pièges: {lvl.trapCount}</div>
                   </div>
                 </div>
                 <Play size={16} className="text-amber-400" />
@@ -250,16 +237,15 @@ export default function App() {
             onClick={() => setCurrentScreen('welcome')}
             className="w-full py-2 bg-slate-950 text-slate-400 hover:text-white rounded-lg text-xs font-bold"
           >
-            ← تغيير اسم اللاعب
+            ← Changer le nom
           </button>
         </div>
       )}
 
-      {/* ================= 3. واجهة اللعب (المنزل والبيوتا) ================= */}
+      {/* ================= 3. EN JEU / MAISON ================= */}
       {currentScreen === 'game' && currentLevel && (
         <div className="flex flex-col items-center w-full max-w-xs animate-fade-in">
           
-          {/* Header */}
           <div className="flex justify-between items-center w-full mb-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
             <div className="flex items-center gap-2">
               <span className="text-xs text-slate-300 font-bold">🥷 {playerName}</span>
@@ -271,20 +257,18 @@ export default function App() {
               onClick={() => setCurrentScreen('levels')}
               className="text-xs bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-slate-300"
             >
-              الخريطة 🗺️
+              Missions 🗺️
             </button>
           </div>
 
-          {/* Map Legend */}
           <div className="flex justify-around w-full text-[10px] text-slate-400 mb-2 bg-slate-900/50 p-1.5 rounded-lg border border-slate-800">
-            <span>🚪 غرفة</span>
-            <span>📦 اختباء</span>
-            <span>💎 الكنز</span>
-            <span>👮 حارس</span>
-            <span>💣 فخ</span>
+            <span>🚪 Pièce</span>
+            <span>📦 Cachette</span>
+            <span>💎 Trésor</span>
+            <span>👮 Garde</span>
+            <span>💣 Piège</span>
           </div>
 
-          {/* Game Board Grid */}
           <div 
             className="grid gap-2 bg-slate-900 p-3 rounded-2xl border border-slate-800 w-full aspect-square shadow-2xl relative"
             style={{ gridTemplateColumns: `repeat(${currentLevel.gridSize}, minmax(0, 1fr))` }}
@@ -306,13 +290,8 @@ export default function App() {
                       : 'bg-slate-800 hover:bg-slate-700 border-slate-700/60'
                   }`}
                 >
-                  {/* الألماس */}
                   {isTarget && !gameOver && !gameWon ? '💎' : null}
-
-                  {/* مكثف اختباء (خزانة/أثاث) */}
                   {isHide && !gameOver ? '📦' : null}
-
-                  {/* الحراس والفخاخ (تظهر عند الخسارة أو الفوز) */}
                   {isGuard && (gameOver || gameWon) ? '👮' : null}
                   {isTrap && (gameOver || gameWon) ? '💣' : null}
                 </button>
@@ -320,17 +299,16 @@ export default function App() {
             })}
           </div>
 
-          {/* Modal Game Over / Win */}
           {(gameOver || gameWon) && (
             <div className="mt-4 bg-slate-900 border border-slate-800 p-4 rounded-xl text-center w-full">
               <h2 className={`text-lg font-bold mb-1 ${gameWon ? 'text-emerald-400' : 'text-rose-500'}`}>
-                {gameWon ? '🎉 نجحت المهمة وسرقتي الكنز!' : timeLeft === 0 ? '⏰ انتهى الوقت!' : '🚨 حصلك الحارس أو الفخ!'}
+                {gameWon ? '🎉 MISSION REUSSIE!' : timeLeft === 0 ? '⏰ TEMPS ECOULE!' : '🚨 ELIMINE!'}
               </h2>
               <button
                 onClick={() => startLevel(currentLevel)}
                 className="mt-3 w-full py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-xs flex items-center justify-center gap-1"
               >
-                <RefreshCw size={14} /> إعادة المحاولة
+                <RefreshCw size={14} /> Rejouer
               </button>
             </div>
           )}
@@ -340,5 +318,5 @@ export default function App() {
 
     </div>
   );
-    }
-    
+          }
+      
