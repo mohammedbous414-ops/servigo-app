@@ -38,8 +38,10 @@ jobs:
 
       - name: Add Android Platform & Sync
         run: |
-          npx @capacitor/cli add android || true
-          npx @capacitor/cli sync android || true
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+          npx cap sync android
 
       - name: Update App Name & Icon Configuration
         run: |
