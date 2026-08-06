@@ -49,8 +49,13 @@ jobs:
           fi
           npx cap sync android
 
-      - name: Update App Name & Icon Configuration
+      - name: Fix Kotlin Duplicate Class Conflict & Configuration
         run: |
+          # Fix Kotlin Duplicate Classes Conflict in root build.gradle
+          if [ -f "android/build.gradle" ]; then
+            echo 'allprojects { configurations.all { resolutionStrategy.eachDependency { DependencyResolveDetails details -> if (details.requested.group == "org.jetbrains.kotlin") { details.useVersion "1.8.22" } } } }' >> android/build.gradle
+          fi
+
           # 1. Update App Name in Android Strings
           sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">BEAT \&amp; NOTE<\/string>/g' android/app/src/main/res/values/strings.xml || true
           sed -i 's/<string name="title_activity_main">.*<\/string>/<string name="title_activity_main">BEAT \&amp; NOTE<\/string>/g' android/app/src/main/res/values/strings.xml || true
@@ -89,12 +94,12 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon
 
       - name: Build Android Release AAB
         run: |
           cd android
-          ./gradlew bundleRelease
+          ./gradlew bundleRelease --no-daemon
 
       - name: Upload Debug APK Artifact
         uses: actions/upload-artifact@v4
