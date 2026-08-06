@@ -21,6 +21,7 @@ jobs:
       - name: Install Dependencies
         run: |
           npm install --legacy-peer-deps
+          npm install @capacitor/cli @capacitor/core @capacitor/android --legacy-peer-deps
 
       - name: Build Web App
         run: |
@@ -37,8 +38,8 @@ jobs:
 
       - name: Add Android Platform & Sync
         run: |
-          npx cap add android || true
-          npx cap sync android
+          npx @capacitor/cli add android || true
+          npx @capacitor/cli sync android || true
 
       - name: Update App Name & Icon Configuration
         run: |
@@ -53,7 +54,6 @@ jobs:
           sudo apt-get install -y imagemagick
           mkdir -p icon_temp
           
-          # Generate 512x512 gradient purple background with music note icon
           convert -size 512x512 radial-gradient:'#7C3AED'-'#4C1D95' \
             -fill white -font DejaVu-Sans-Bold -pointsize 260 -gravity center -draw "text 0,-10 '🎵'" \
             icon_temp/icon.png
