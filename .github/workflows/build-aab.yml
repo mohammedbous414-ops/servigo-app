@@ -23,6 +23,12 @@ jobs:
           npm install --legacy-peer-deps
           npm install @capacitor/cli @capacitor/core @capacitor/android --legacy-peer-deps
 
+      - name: Create Capacitor Config if missing
+        run: |
+          if [ ! -f "capacitor.config.json" ] && [ ! -f "capacitor.config.ts" ]; then
+            echo '{"appId": "com.beatnote.app", "appName": "BEAT & NOTE", "webDir": "dist"}' > capacitor.config.json
+          fi
+
       - name: Build Web App
         run: |
           npm run build
